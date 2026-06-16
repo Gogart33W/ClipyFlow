@@ -13,12 +13,23 @@ namespace ClipyFlow.Services
         public List<SnippetItem> Snippets { get; set; } = new();
         public List<LanguageCategory> LibraryCategories { get; set; } = new();
         public bool IsFirstRun { get; set; } = true;
+        
+        public SettingsData Settings { get; set; } = new();
+    }
+
+    public class SettingsData
+    {
+        public bool StartWithWindows { get; set; } = false;
+        public string TenorApiKey { get; set; } = string.Empty;
+        public bool AutoPasteEnabled { get; set; } = true;
+        public string Theme { get; set; } = "System";
     }
 
     public class StorageService
     {
         private readonly string _folderPath;
         private readonly string _filePath;
+        private static readonly System.Threading.SemaphoreSlim _fileLock = new System.Threading.SemaphoreSlim(1, 1);
 
         public StorageService()
         {
@@ -171,17 +182,24 @@ namespace ClipyFlow.Services
             }
         }
 
-        public void SaveData(AppData data)
+        public async void SaveData(AppData data)
         {
+            await _fileLock.WaitAsync();
             try
             {
                 data.IsFirstRun = false;
                 string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(_filePath, json);
+                string tempPath = _filePath + ".tmp";
+                File.WriteAllText(tempPath, json);
+                File.Move(tempPath, _filePath, true);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Failed to save data: {ex.Message}");
+            }
+            finally
+            {
+                _fileLock.Release();
             }
         }
     }

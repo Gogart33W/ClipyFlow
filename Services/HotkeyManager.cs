@@ -29,9 +29,9 @@ namespace ClipyFlow.Services
         private bool _isRegistered;
         public event EventHandler? HotkeyPressed;
 
-        public void Start(IntPtr windowHandle)
+        public bool Start(IntPtr windowHandle)
         {
-            if (_isRegistered) return;
+            if (_isRegistered) return true;
 
             _hwndSource = HwndSource.FromHwnd(windowHandle);
             if (_hwndSource != null)
@@ -47,8 +47,10 @@ namespace ClipyFlow.Services
                 else
                 {
                     System.Diagnostics.Debug.WriteLine("Failed to register global hotkey Alt+V.");
+                    return false;
                 }
             }
+            return false;
         }
 
         public void Stop()

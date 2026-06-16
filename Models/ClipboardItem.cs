@@ -8,7 +8,8 @@ namespace ClipyFlow.Models
         Text,
         Link,
         Code,
-        Color
+        Color,
+        Image
     }
 
     public class ClipboardItem : System.ComponentModel.INotifyPropertyChanged
@@ -17,6 +18,19 @@ namespace ClipyFlow.Models
         public DateTime CopiedAt { get; set; }
         public ClipboardItemType ItemType { get; set; } = ClipboardItemType.Text;
         public string? HexColor { get; set; }
+        public string? ImagePath { get; set; }
+        
+        public string TimeGroup
+        {
+            get
+            {
+                var diff = DateTime.Now.Date - CopiedAt.Date;
+                if (diff.Days == 0) return "Сьогодні";
+                if (diff.Days == 1) return "Вчора";
+                if (diff.Days <= 7) return "Останні 7 днів";
+                return "Раніше";
+            }
+        }
 
         private bool _isPinned;
         public bool IsPinned
@@ -53,6 +67,51 @@ namespace ClipyFlow.Models
             return item;
         }
 
+        public static ClipboardItem? CreateImage(System.Windows.Media.Imaging.BitmapSource source)
+        {
+            try
+            {
+                string imagesDir = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+                    "ClipyFlow", "images");
+                
+                System.IO.Directory.CreateDirectory(imagesDir);
+                
+                string fileName = $"img_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png";
+                string fullPath = System.IO.Path.Combine(imagesDir, fileName);
+
+                using (var fileStream = new System.IO.FileStream(fullPath, System.IO.FileMode.Create))
+                {
+                    var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                    encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(source));
+                    encoder.Save(fileStream);
+                }
+
+                // Cleanup old images (keep last 20)
+                var dir = new System.IO.DirectoryInfo(imagesDir);
+                var files = dir.GetFiles("img_*.png").OrderByDescending(f => f.CreationTime).ToList();
+                if (files.Count > 20)
+                {
+                    foreach (var file in files.Skip(20))
+                    {
+                        try { file.Delete(); } catch { }
+                    }
+                }
+
+                return new ClipboardItem
+                {
+                    Text = "[Image]",
+                    CopiedAt = DateTime.Now,
+                    ItemType = ClipboardItemType.Image,
+                    ImagePath = fullPath
+                };
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         private void ParseType()
         {
             if (string.IsNullOrWhiteSpace(Text)) return;
@@ -76,12 +135,14 @@ namespace ClipyFlow.Models
                 return;
             }
 
-            // Check if Code (very basic heuristic)
-            if (trimmed.Contains("public ") || trimmed.Contains("private ") || 
-                trimmed.Contains("function ") || trimmed.Contains("=>") || 
-                trimmed.Contains("const ") || trimmed.Contains("let ") ||
-                (trimmed.Contains("{") && trimmed.Contains("}")) ||
-                trimmed.StartsWith("<") && trimmed.EndsWith(">"))
+            // Check if Code (better heuristics)
+            bool isCode = false;
+            if (Regex.IsMatch(trimmed, @"\b(public|private|protected|class|function|var|let|const|def|import|using|namespace)\b\s+[\w\$\_]+")) isCode = true;
+            else if (Regex.IsMatch(trimmed, @"<[a-z0-9]+[^>]*>.*<\/[a-z0-9]+>", RegexOptions.IgnoreCase | RegexOptions.Singleline)) isCode = true; // HTML/XML
+            else if (Regex.IsMatch(trimmed, @"\w+\s*\(.*\)\s*\{")) isCode = true; // function signature
+            else if (Regex.IsMatch(trimmed, @"^\{\s*""\w+""\s*:")) isCode = true; // JSON like
+
+            if (isCode)
             {
                 ItemType = ClipboardItemType.Code;
                 return;

@@ -18,7 +18,9 @@ namespace ClipyFlow
         public ObservableCollection<SnippetItem> Snippets { get; set; } = new ObservableCollection<SnippetItem>();
         public ObservableCollection<LanguageCategory> LibraryCategories { get; set; } = new ObservableCollection<LanguageCategory>();
         private readonly StorageService _storage;
-        private bool _ignoreNextClipboardChange = false;
+        private readonly AppData _data;
+        private bool _isInternalAction = false;
+        private bool _ignoreNextImage = false;
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -58,16 +60,51 @@ namespace ClipyFlow
         private const uint MONITOR_DEFAULTTONEAREST = 2;
 
         [DllImport("user32.dll", SetLastError = true)]
-        private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+        private static extern uint SendInput(uint nInputs, [MarshalAs(UnmanagedType.LPArray), In] INPUT[] pInputs, int cbSize);
 
-        private const int KEYEVENTF_KEYUP = 0x0002;
-        private const byte VK_CONTROL = 0x11;
-        private const byte VK_V = 0x56;
+        [StructLayout(LayoutKind.Sequential)]
+        public struct INPUT
+        {
+            public uint type;
+            public InputUnion U;
+            public static int Size => Marshal.SizeOf(typeof(INPUT));
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct InputUnion
+        {
+            [FieldOffset(0)] public MOUSEINPUT mi;
+            [FieldOffset(0)] public KEYBDINPUT ki;
+            [FieldOffset(0)] public HARDWAREINPUT hi;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KEYBDINPUT
+        {
+            public ushort wVk;
+            public ushort wScan;
+            public uint dwFlags;
+            public uint time;
+            public UIntPtr dwExtraInfo;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MOUSEINPUT { public int dx, dy; public uint mouseData, dwFlags, time; public UIntPtr dwExtraInfo; }
+        [StructLayout(LayoutKind.Sequential)]
+        public struct HARDWAREINPUT { public uint uMsg; public ushort wParamL, wParamH; }
+
+        private const int INPUT_KEYBOARD = 1;
+        private const uint KEYEVENTF_KEYUP = 0x0002;
+        private const ushort VK_CONTROL = 0x11;
+        private const ushort VK_V = 0x56;
+
+        private string? _lastCopiedText = null;
 
         public MainWindow(StorageService storage, AppData data)
         {
             InitializeComponent();
             _storage = storage;
+            _data = data;
 
             // Load data (limit to 50 items to prevent huge memory usage if JSON was modified)
             foreach (var item in data.History.Take(50))
@@ -96,21 +133,34 @@ namespace ClipyFlow
             }
 
             DataContext = this;
+            
+            var historyView = System.Windows.Data.CollectionViewSource.GetDefaultView(History);
+            historyView.GroupDescriptions.Add(new System.Windows.Data.PropertyGroupDescription("TimeGroup"));
         }
 
         protected override void OnDeactivated(EventArgs e)
         {
             base.OnDeactivated(e);
-            HideWindow();
+            if (!_isInternalAction)
+            {
+                HideWindow();
+            }
         }
 
         public void AddItem(ClipboardItem item)
         {
             Dispatcher.Invoke(() =>
             {
-                if (_ignoreNextClipboardChange)
+                if (_lastCopiedText == item.Text && item.ItemType != ClipboardItemType.Image)
                 {
-                    _ignoreNextClipboardChange = false;
+                    // Ignore self-copy to prevent loops
+                    _lastCopiedText = null;
+                    return;
+                }
+                
+                if (item.ItemType == ClipboardItemType.Image && _ignoreNextImage)
+                {
+                    _ignoreNextImage = false;
                     return;
                 }
 
@@ -143,7 +193,7 @@ namespace ClipyFlow
                 Snippets = new System.Collections.Generic.List<SnippetItem>(Snippets),
                 LibraryCategories = new System.Collections.Generic.List<LanguageCategory>(LibraryCategories)
             };
-            _storage.SaveData(data);
+            System.Threading.Tasks.Task.Run(() => _storage.SaveData(data));
         }
 
         public void ShowAtCursor()
@@ -215,6 +265,76 @@ namespace ClipyFlow
             InputSearch.Text = string.Empty; // Clear search for next time
         }
 
+        private void InputSearch_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            var activeListView = GetActiveListView();
+            if (activeListView == null) return;
+
+            if (e.Key == Key.Down)
+            {
+                e.Handled = true;
+                if (activeListView.Items.Count > 0)
+                {
+                    activeListView.SelectedIndex = Math.Min(activeListView.Items.Count - 1, activeListView.SelectedIndex + 1);
+                    activeListView.ScrollIntoView(activeListView.SelectedItem);
+                }
+            }
+            else if (e.Key == Key.Up)
+            {
+                e.Handled = true;
+                if (activeListView.Items.Count > 0)
+                {
+                    activeListView.SelectedIndex = Math.Max(0, activeListView.SelectedIndex - 1);
+                    activeListView.ScrollIntoView(activeListView.SelectedItem);
+                }
+            }
+            else if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                
+                // If nothing is selected, try to select the first item
+                if (activeListView.SelectedItem == null && activeListView.Items.Count > 0)
+                {
+                    activeListView.SelectedIndex = 0;
+                }
+
+                if (activeListView.SelectedItem != null)
+                {
+                    if (activeListView.SelectedItem is ClipboardItem clipboardItem) CopyToClipboardItem(clipboardItem);
+                    else if (activeListView.SelectedItem is SnippetItem snippetItem) CopyToClipboardText(snippetItem.Content);
+                    else if (activeListView.SelectedItem is LanguageSnippet langSnippet) CopyToClipboardText(langSnippet.Content);
+                }
+            }
+        }
+
+        private System.Windows.Controls.ListView? GetActiveListView()
+        {
+            if (ViewHistory.Visibility == Visibility.Visible) return ViewHistory;
+            if (ViewSnippets.Visibility == Visibility.Visible) return ViewSnippets;
+            if (ViewLibrary.Visibility == Visibility.Visible)
+            {
+                // Find the active ListView in the TabControl
+                if (ViewLibrary.ItemContainerGenerator.ContainerFromItem(ViewLibrary.SelectedItem) is System.Windows.Controls.TabItem tabItem)
+                {
+                    return FindVisualChild<System.Windows.Controls.ListView>(tabItem);
+                }
+            }
+            return null;
+        }
+
+        private static T? FindVisualChild<T>(System.Windows.DependencyObject parent) where T : System.Windows.DependencyObject
+        {
+            if (parent == null) return null;
+            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                if (child is T t) return t;
+                var result = FindVisualChild<T>(child);
+                if (result != null) return result;
+            }
+            return null;
+        }
+
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
@@ -229,25 +349,26 @@ namespace ClipyFlow
             HideWindow();
         }
 
-        private void HistoryList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void HistoryList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (sender is System.Windows.Controls.ListView listView && listView.SelectedItem is ClipboardItem item)
             {
-                CopyToClipboard(item.Text);
+                CopyToClipboardItem(item);
                 listView.SelectedItem = null;
             }
         }
 
-        private void SnippetsList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void SnippetsList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (sender is System.Windows.Controls.ListView listView && listView.SelectedItem is SnippetItem item)
             {
-                CopyToClipboard(item.Content);
+                if (item.IsEditing) return; // Prevent copying if double-clicked to edit
+                CopyToClipboardText(item.Content);
                 listView.SelectedItem = null;
             }
         }
 
-        private void LibraryList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void LibraryList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (sender is System.Windows.Controls.ListView listView && listView.SelectedItem is LanguageSnippet item)
             {
@@ -271,61 +392,180 @@ namespace ClipyFlow
 
                 SaveData();
 
-                CopyToClipboard(item.Content);
+                CopyToClipboardText(item.Content);
                 listView.SelectedItem = null;
             }
         }
 
+        private System.Windows.Threading.DispatcherTimer? _searchTimer;
+
         private void SearchBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
-            if (sender is Wpf.Ui.Controls.TextBox tb)
+            if (_searchTimer == null)
             {
-                string query = tb.Text.ToLowerInvariant();
-                var historyView = System.Windows.Data.CollectionViewSource.GetDefaultView(History);
-                historyView.Filter = item => 
+                _searchTimer = new System.Windows.Threading.DispatcherTimer();
+                _searchTimer.Interval = TimeSpan.FromMilliseconds(150);
+                _searchTimer.Tick += (s, ev) => 
                 {
-                    if (string.IsNullOrWhiteSpace(query)) return true;
-                    if (item is ClipboardItem c) return c.Text.ToLowerInvariant().Contains(query);
-                    return false;
+                    _searchTimer.Stop();
+                    ApplySearchFilter();
                 };
+            }
+            _searchTimer.Stop();
+            _searchTimer.Start();
+        }
 
-                var snippetsView = System.Windows.Data.CollectionViewSource.GetDefaultView(Snippets);
-                snippetsView.Filter = item => 
+        private void ApplySearchFilter()
+        {
+            string query = InputSearch.Text.ToLowerInvariant();
+            var historyView = System.Windows.Data.CollectionViewSource.GetDefaultView(History);
+            historyView.Filter = item => 
+            {
+                if (string.IsNullOrWhiteSpace(query)) return true;
+                if (item is ClipboardItem c) 
                 {
-                    if (string.IsNullOrWhiteSpace(query)) return true;
-                    if (item is SnippetItem s) return s.Title.ToLowerInvariant().Contains(query) || s.Content.ToLowerInvariant().Contains(query);
-                    return false;
-                };
+                    if (c.ItemType == ClipboardItemType.Image && query != "image") return false;
+                    return c.Text.ToLowerInvariant().Contains(query);
+                }
+                return false;
+            };
+
+            var snippetsView = System.Windows.Data.CollectionViewSource.GetDefaultView(Snippets);
+            snippetsView.Filter = item => 
+            {
+                if (string.IsNullOrWhiteSpace(query)) return true;
+                if (item is SnippetItem s) return s.Title.ToLowerInvariant().Contains(query) || s.Content.ToLowerInvariant().Contains(query);
+                return false;
+            };
+        }
+
+        private void CopyToClipboardItem(ClipboardItem item)
+        {
+            if (item.ItemType == ClipboardItemType.Image && item.ImagePath != null)
+            {
+                try
+                {
+                    _lastCopiedText = null;
+                    _ignoreNextImage = true;
+                    var bmp = new System.Windows.Media.Imaging.BitmapImage();
+                    bmp.BeginInit();
+                    bmp.UriSource = new Uri(item.ImagePath);
+                    bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                    bmp.EndInit();
+                    System.Windows.Clipboard.SetImage(bmp);
+                    PerformAutoPaste();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Image copy failed: {ex.Message}");
+                }
+            }
+            else
+            {
+                CopyToClipboardText(item.Text);
             }
         }
 
-        private async void CopyToClipboard(string text)
+        private void CopyToClipboardText(string text)
         {
             try
             {
-                _ignoreNextClipboardChange = true;
+                _lastCopiedText = text;
                 System.Windows.Clipboard.SetText(text);
+                PerformAutoPaste();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Text copy failed: {ex.Message}");
+            }
+        }
+
+        private async void PerformAutoPaste()
+        {
+            try
+            {
                 HideWindow();
 
                 // Small delay to allow the previous window to regain focus
                 await System.Threading.Tasks.Task.Delay(150);
 
-                // Simulate Ctrl+V to auto-paste into active window
-                keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
-                keybd_event(VK_V, 0, 0, UIntPtr.Zero);
-                keybd_event(VK_V, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-                keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+                // Simulate Ctrl+V using SendInput
+                INPUT[] inputs = new INPUT[4];
+
+                // Ctrl Down
+                inputs[0].type = INPUT_KEYBOARD;
+                inputs[0].U.ki.wVk = VK_CONTROL;
+
+                // V Down
+                inputs[1].type = INPUT_KEYBOARD;
+                inputs[1].U.ki.wVk = VK_V;
+
+                // V Up
+                inputs[2].type = INPUT_KEYBOARD;
+                inputs[2].U.ki.wVk = VK_V;
+                inputs[2].U.ki.dwFlags = KEYEVENTF_KEYUP;
+
+                // Ctrl Up
+                inputs[3].type = INPUT_KEYBOARD;
+                inputs[3].U.ki.wVk = VK_CONTROL;
+                inputs[3].U.ki.dwFlags = KEYEVENTF_KEYUP;
+
+                SendInput((uint)inputs.Length, inputs, INPUT.Size);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Copy failed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Auto-paste failed: {ex.Message}");
             }
         }
 
         private void ClearHistory_Click(object sender, RoutedEventArgs e)
         {
-            History.Clear();
-            SaveData();
+            _isInternalAction = true;
+            try
+            {
+                var result = System.Windows.MessageBox.Show(
+                    "Are you sure you want to clear all history?", 
+                    "Clear History", 
+                    System.Windows.MessageBoxButton.YesNo, 
+                    MessageBoxImage.Warning);
+                    
+                if (result == System.Windows.MessageBoxResult.Yes)
+                {
+                    History.Clear();
+                    SaveData();
+                }
+            }
+            finally
+            {
+                _isInternalAction = false;
+            }
+        }
+
+        private void DeleteHistory_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn && btn.DataContext is ClipboardItem item)
+            {
+                History.Remove(item);
+                SaveData();
+            }
+        }
+
+        private void SnippetText_DoubleClicked(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 2 && sender is FrameworkElement element && element.DataContext is SnippetItem item)
+            {
+                item.IsEditing = true;
+                e.Handled = true;
+            }
+        }
+
+        private void SaveSnippet_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn && btn.DataContext is SnippetItem item)
+            {
+                item.IsEditing = false;
+                SaveData();
+            }
         }
 
         private void PinHistory_Click(object sender, RoutedEventArgs e)
@@ -372,11 +612,15 @@ namespace ClipyFlow
             ViewHistory.Visibility = Visibility.Visible;
             ViewSnippets.Visibility = Visibility.Collapsed;
             ViewLibrary.Visibility = Visibility.Collapsed;
+            ViewEmoji.Visibility = Visibility.Collapsed;
+            ViewGif.Visibility = Visibility.Collapsed;
             BtnClearHistory.Visibility = Visibility.Visible;
 
             BtnNavHistory.Appearance = Wpf.Ui.Controls.ControlAppearance.Primary;
             BtnNavSnippets.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavLibrary.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+            BtnNavEmoji.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+            BtnNavGif.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
         }
 
         private void NavSnippets_Click(object sender, RoutedEventArgs e)
@@ -384,11 +628,15 @@ namespace ClipyFlow
             ViewHistory.Visibility = Visibility.Collapsed;
             ViewSnippets.Visibility = Visibility.Visible;
             ViewLibrary.Visibility = Visibility.Collapsed;
+            ViewEmoji.Visibility = Visibility.Collapsed;
+            ViewGif.Visibility = Visibility.Collapsed;
             BtnClearHistory.Visibility = Visibility.Collapsed; // Hide clear on snippets
 
             BtnNavHistory.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavSnippets.Appearance = Wpf.Ui.Controls.ControlAppearance.Primary;
             BtnNavLibrary.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+            BtnNavEmoji.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+            BtnNavGif.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
         }
 
         private void NavLibrary_Click(object sender, RoutedEventArgs e)
@@ -396,11 +644,68 @@ namespace ClipyFlow
             ViewHistory.Visibility = Visibility.Collapsed;
             ViewSnippets.Visibility = Visibility.Collapsed;
             ViewLibrary.Visibility = Visibility.Visible;
+            ViewEmoji.Visibility = Visibility.Collapsed;
+            ViewGif.Visibility = Visibility.Collapsed;
             BtnClearHistory.Visibility = Visibility.Collapsed; // Hide clear on library
 
             BtnNavHistory.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavSnippets.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavLibrary.Appearance = Wpf.Ui.Controls.ControlAppearance.Primary;
+            BtnNavEmoji.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+            BtnNavGif.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+        }
+
+        private void NavEmoji_Click(object sender, RoutedEventArgs e)
+        {
+            ViewHistory.Visibility = Visibility.Collapsed;
+            ViewSnippets.Visibility = Visibility.Collapsed;
+            ViewLibrary.Visibility = Visibility.Collapsed;
+            ViewEmoji.Visibility = Visibility.Visible;
+            ViewGif.Visibility = Visibility.Collapsed;
+            BtnClearHistory.Visibility = Visibility.Collapsed; // Hide clear on emoji
+
+            BtnNavHistory.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+            BtnNavSnippets.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+            BtnNavLibrary.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+            BtnNavEmoji.Appearance = Wpf.Ui.Controls.ControlAppearance.Primary;
+            BtnNavGif.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+        }
+
+        private void EmojiControl_EmojiSelected(object sender, Models.EmojiItem e)
+        {
+            CopyToClipboardText(e.Character);
+        }
+
+        private void NavGif_Click(object sender, RoutedEventArgs e)
+        {
+            ViewHistory.Visibility = Visibility.Collapsed;
+            ViewSnippets.Visibility = Visibility.Collapsed;
+            ViewLibrary.Visibility = Visibility.Collapsed;
+            ViewEmoji.Visibility = Visibility.Collapsed;
+            ViewGif.Visibility = Visibility.Visible;
+            BtnClearHistory.Visibility = Visibility.Collapsed; // Hide clear on gif
+
+            BtnNavHistory.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+            BtnNavSnippets.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+            BtnNavLibrary.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+            BtnNavEmoji.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+            BtnNavGif.Appearance = Wpf.Ui.Controls.ControlAppearance.Primary;
+            
+            ViewGif.Initialize(_data.Settings.TenorApiKey);
+        }
+
+        private void GifControl_GifSelected(object sender, string gifUrl)
+        {
+            CopyToClipboardText(gifUrl); // Just copy the URL for now
+        }
+
+        private void NavSettings_Click(object sender, RoutedEventArgs e)
+        {
+            _isInternalAction = true;
+            var settingsWin = new Views.SettingsWindow(_storage, _data);
+            settingsWin.Owner = this;
+            settingsWin.ShowDialog();
+            _isInternalAction = false;
         }
     }
 }

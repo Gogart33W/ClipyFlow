@@ -67,7 +67,19 @@ namespace ClipyFlow.Services
         {
             try
             {
-                if (System.Windows.Clipboard.ContainsText())
+                if (System.Windows.Clipboard.ContainsImage())
+                {
+                    var imageSource = System.Windows.Clipboard.GetImage();
+                    if (imageSource != null)
+                    {
+                        var item = ClipboardItem.CreateImage(imageSource);
+                        if (item != null)
+                        {
+                            ClipboardChanged?.Invoke(this, item);
+                        }
+                    }
+                }
+                else if (System.Windows.Clipboard.ContainsText())
                 {
                     string text = System.Windows.Clipboard.GetText();
                     

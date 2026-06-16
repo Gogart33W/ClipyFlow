@@ -1,0 +1,44 @@
+<UserControl x:Class="ClipyFlow.Views.GifControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             Background="Transparent">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ui:TextBox x:Name="SearchBox" PlaceholderText="Search GIFs..." KeyDown="SearchBox_KeyDown" />
+            <ui:Button Grid.Column="1" Margin="5,0,0,0" Appearance="Primary" Click="Search_Click">
+                <ui:SymbolIcon Symbol="Search24" />
+            </ui:Button>
+        </Grid>
+        
+        <TextBlock x:Name="TxtStatus" Grid.Row="1" Text="Loading..." HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="GifList">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <ui:Button Appearance="Transparent" Click="Gif_Click" Padding="5" ToolTip="Click to copy link">
+                            <!-- In a full version, this would be a MediaElement to show animated gifs, 
+                                 or a custom image cache control. For now we use standard Image. -->
+                            <Image Source="{Binding PreviewUrl}" Width="150" Height="150" Stretch="UniformToFill" />
+                        </ui:Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

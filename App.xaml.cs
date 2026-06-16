@@ -15,9 +15,18 @@ public partial class App : Application
     private ClipboardManager? _clipboardManager;
     private HotkeyManager? _hotkeyManager;
     private MainWindow? _mainWindow;
+    private static System.Threading.Mutex? _mutex;
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        const string appName = "ClipyFlowAppMutex";
+        _mutex = new System.Threading.Mutex(true, appName, out bool createdNew);
+        if (!createdNew)
+        {
+            Application.Current.Shutdown();
+            return;
+        }
+
         base.OnStartup(e);
 
         var storage = new StorageService();
@@ -47,8 +56,22 @@ public partial class App : Application
             IconSource = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Assets/icon.png"))
         };
 
-        // Context menu for the tray icon can be added here
+        // Context menu for the tray icon
+        var contextMenu = new System.Windows.Controls.ContextMenu();
         
+        var showItem = new System.Windows.Controls.MenuItem { Header = "Show ClipyFlow (Alt+V)" };
+        showItem.Click += (s, ev) => _mainWindow?.ShowAtCursor();
+        
+        var exitItem = new System.Windows.Controls.MenuItem { Header = "Exit" };
+        exitItem.Click += (s, ev) => Application.Current.Shutdown();
+        
+        contextMenu.Items.Add(showItem);
+        contextMenu.Items.Add(new System.Windows.Controls.Separator());
+        contextMenu.Items.Add(exitItem);
+
+        _taskbarIcon.ContextMenu = contextMenu;
+        _taskbarIcon.TrayLeftMouseUp += (s, ev) => _mainWindow?.ShowAtCursor();
+
         // Initialize hidden main window
         _mainWindow = new MainWindow(storage, data);
         
@@ -64,13 +87,16 @@ public partial class App : Application
         };
         _clipboardManager.StartListening(helper.Handle);
 
-        // Initialize and start HotkeyManager
         _hotkeyManager = new HotkeyManager();
         _hotkeyManager.HotkeyPressed += (s, ev) =>
         {
             _mainWindow.ShowAtCursor();
         };
-        _hotkeyManager.Start(helper.Handle);
+        bool hkSuccess = _hotkeyManager.Start(helper.Handle);
+        if (!hkSuccess && _taskbarIcon != null)
+        {
+            _taskbarIcon.ShowBalloonTip("ClipyFlow", "Failed to register Alt+V hotkey. It might be used by another app.", BalloonIcon.Warning);
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
