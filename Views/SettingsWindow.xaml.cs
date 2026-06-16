@@ -97,6 +97,21 @@ namespace ClipyFlow.Views
             }
         }
 
+        private void BtnPickColor_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new System.Windows.Forms.ColorDialog
+            {
+                FullOpen = true
+            };
+
+            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                var hexColor = $"#{dlg.Color.R:X2}{dlg.Color.G:X2}{dlg.Color.B:X2}";
+                _data.Settings.CustomBackgroundColor = hexColor;
+                TextBgColor.Text = hexColor;
+            }
+        }
+
         private void BtnClearColor_Click(object sender, RoutedEventArgs e)
         {
             _data.Settings.CustomBackgroundColor = string.Empty;

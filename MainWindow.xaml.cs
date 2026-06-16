@@ -408,12 +408,12 @@ namespace ClipyFlow
             HideWindow();
         }
 
-        private void HistoryList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void HistoryItem_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.Controls.ListView listView && listView.SelectedItem is ClipboardItem item)
+            if (sender is FrameworkElement element && element.DataContext is ClipboardItem item)
             {
                 CopyToClipboardItem(item);
-                listView.SelectedItem = null;
+                ViewHistory.SelectedItem = null;
             }
         }
 

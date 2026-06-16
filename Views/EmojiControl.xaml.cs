@@ -21,7 +21,7 @@ namespace ClipyFlow.Views
 
         private void LoadEmojis(string query)
         {
-            var emojis = _emojiService.Search(query).ToList();
+            var emojis = _emojiService.Search(query).Take(100).ToList();
             EmojiList.ItemsSource = emojis;
         }
 

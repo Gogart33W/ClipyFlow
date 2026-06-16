@@ -22,13 +22,13 @@ namespace ClipyFlow.Services
 
         public async Task<List<GifItem>> GetFeaturedGifsAsync(string apiKey)
         {
-            return await FetchGifsAsync($"https://tenor.googleapis.com/v2/featured?key={apiKey}&limit=20");
+            return await FetchGifsAsync($"https://g.tenor.com/v1/trending?key={apiKey}&limit=20");
         }
 
         public async Task<List<GifItem>> SearchGifsAsync(string apiKey, string query)
         {
             var encodedQuery = Uri.EscapeDataString(query);
-            return await FetchGifsAsync($"https://tenor.googleapis.com/v2/search?q={encodedQuery}&key={apiKey}&limit=20");
+            return await FetchGifsAsync($"https://g.tenor.com/v1/search?q={encodedQuery}&key={apiKey}&limit=20");
         }
 
         private async Task<List<GifItem>> FetchGifsAsync(string url)
@@ -47,8 +47,9 @@ namespace ClipyFlow.Services
                 {
                     foreach (var gifObject in resultsArray.EnumerateArray())
                     {
-                        if (gifObject.TryGetProperty("media_formats", out var formats))
+                        if (gifObject.TryGetProperty("media", out var mediaArray) && mediaArray.GetArrayLength() > 0)
                         {
+                            var formats = mediaArray[0];
                             string gifUrl = "";
                             string previewUrl = "";
                             

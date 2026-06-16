@@ -91,9 +91,11 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <ui:TextBox x:Name="TextBgColor" Grid.Column="0" Text="{Binding Settings.CustomBackgroundColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="e.g. #FF0000 or #2A2A2A" Margin="0,0,5,0" />
-                        <ui:Button Grid.Column="1" Content="Clear" Click="BtnClearColor_Click" />
+                        <ui:Button Grid.Column="1" Content="Pick" Click="BtnPickColor_Click" Margin="0,0,5,0" />
+                        <ui:Button Grid.Column="2" Content="Clear" Click="BtnClearColor_Click" />
                     </Grid>
                 </StackPanel>
 
