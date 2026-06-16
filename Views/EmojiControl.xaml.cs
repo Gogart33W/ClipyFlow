@@ -19,10 +19,42 @@ namespace ClipyFlow.Views
             LoadEmojis("");
         }
 
-        private void LoadEmojis(string query)
+        private System.Collections.ObjectModel.ObservableCollection<EmojiItem> _emojiCollection = new();
+        private System.Threading.CancellationTokenSource? _loadCts;
+
+        private async void LoadEmojis(string query)
         {
-            var emojis = _emojiService.Search(query).Take(100).ToList();
-            EmojiList.ItemsSource = emojis;
+            _loadCts?.Cancel();
+            _loadCts = new System.Threading.CancellationTokenSource();
+            var token = _loadCts.Token;
+
+            var emojis = _emojiService.Search(query).ToList();
+            
+            EmojiList.ItemsSource = null;
+            _emojiCollection.Clear();
+            EmojiList.ItemsSource = _emojiCollection;
+
+            if (emojis.Count == 0) return;
+
+            // Load first chunk instantly
+            var firstChunk = emojis.Take(50).ToList();
+            foreach (var item in firstChunk) _emojiCollection.Add(item);
+
+            // Load the rest asynchronously to keep UI responsive
+            if (emojis.Count > 50)
+            {
+                var remaining = emojis.Skip(50).ToList();
+                for (int i = 0; i < remaining.Count; i += 50)
+                {
+                    if (token.IsCancellationRequested) break;
+                    var chunk = remaining.Skip(i).Take(50).ToList();
+                    
+                    await System.Threading.Tasks.Task.Delay(10, token).ConfigureAwait(true);
+                    
+                    if (token.IsCancellationRequested) break;
+                    foreach (var item in chunk) _emojiCollection.Add(item);
+                }
+            }
         }
 
         private System.Windows.Threading.DispatcherTimer? _searchTimer;

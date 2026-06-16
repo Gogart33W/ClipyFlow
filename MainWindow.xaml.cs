@@ -100,6 +100,15 @@ namespace ClipyFlow
 
         private string? _lastCopiedText = null;
 
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        private IntPtr _previousForegroundWindow;
+
         public MainWindow(StorageService storage, AppData data)
         {
             InitializeComponent();
@@ -155,6 +164,12 @@ namespace ClipyFlow
             {
                 HideWindow();
             }
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            e.Cancel = true;
+            HideWindow();
         }
 
         public void UpdateCustomBackground()
@@ -249,6 +264,7 @@ namespace ClipyFlow
 
         public void ShowAtCursor()
         {
+            _previousForegroundWindow = GetForegroundWindow();
             this.Show(); // Show first to ensure PresentationSource is valid
             this.Activate();
 
@@ -556,7 +572,18 @@ namespace ClipyFlow
                 if (!_data.Settings.AutoPasteEnabled) return;
 
                 // If window is pinned, we shouldn't steal focus from ourselves with Ctrl+V because it will paste into ClipyFlow's search box.
-                if (_data.Settings.IsWindowPinned) return;
+                if (_data.Settings.IsWindowPinned)
+                {
+                    if (_previousForegroundWindow != IntPtr.Zero)
+                    {
+                        SetForegroundWindow(_previousForegroundWindow);
+                        await System.Threading.Tasks.Task.Delay(50);
+                    }
+                    else
+                    {
+                        return; // Nowhere to paste
+                    }
+                }
 
                 // Small delay to allow the previous window to regain focus
                 await System.Threading.Tasks.Task.Delay(150);
@@ -619,6 +646,7 @@ namespace ClipyFlow
             {
                 History.Remove(item);
                 SaveData();
+                e.Handled = true;
             }
         }
 
@@ -659,6 +687,7 @@ namespace ClipyFlow
                     item.IsPinned = true;
                 }
                 SaveData();
+                e.Handled = true;
             }
         }
 
@@ -676,6 +705,7 @@ namespace ClipyFlow
                 }
                 
                 SaveData();
+                e.Handled = true;
             }
         }
 

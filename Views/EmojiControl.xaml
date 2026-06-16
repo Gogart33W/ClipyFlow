@@ -21,7 +21,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <ui:Button Appearance="Transparent" Click="Emoji_Click" Padding="10" ToolTip="{Binding Name}">
-                            <TextBlock Text="{Binding Character}" FontSize="32" FontFamily="Segoe UI Emoji" />
+                            <TextBlock Text="{Binding Character}" FontSize="32" FontFamily="Segoe UI Emoji" TextOptions.TextFormattingMode="Ideal" />
                         </ui:Button>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
