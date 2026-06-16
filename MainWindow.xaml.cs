@@ -136,14 +136,64 @@ namespace ClipyFlow
             
             var historyView = System.Windows.Data.CollectionViewSource.GetDefaultView(History);
             historyView.GroupDescriptions.Add(new System.Windows.Data.PropertyGroupDescription("TimeGroup"));
+            
+            // Apply customization
+            TogglePinWindow.IsChecked = _data.Settings.IsWindowPinned;
+            TogglePinWindow.Click += (s, e) => 
+            {
+                _data.Settings.IsWindowPinned = TogglePinWindow.IsChecked == true;
+                SaveData();
+            };
+            
+            UpdateCustomBackground();
         }
 
         protected override void OnDeactivated(EventArgs e)
         {
             base.OnDeactivated(e);
-            if (!_isInternalAction)
+            if (!_isInternalAction && !_data.Settings.IsWindowPinned)
             {
                 HideWindow();
+            }
+        }
+
+        public void UpdateCustomBackground()
+        {
+            // Apply Opacity
+            CustomBgImage.Opacity = _data.Settings.CustomBackgroundOpacity;
+
+            // Apply Background Image
+            if (!string.IsNullOrEmpty(_data.Settings.CustomBackgroundPath) && System.IO.File.Exists(_data.Settings.CustomBackgroundPath))
+            {
+                try
+                {
+                    var bmp = new System.Windows.Media.Imaging.BitmapImage();
+                    bmp.BeginInit();
+                    bmp.UriSource = new Uri(_data.Settings.CustomBackgroundPath);
+                    bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                    bmp.EndInit();
+                    CustomBgImage.Source = bmp;
+                }
+                catch { CustomBgImage.Source = null; }
+            }
+            else
+            {
+                CustomBgImage.Source = null;
+            }
+
+            // Apply Background Color
+            if (!string.IsNullOrEmpty(_data.Settings.CustomBackgroundColor))
+            {
+                try
+                {
+                    var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(_data.Settings.CustomBackgroundColor);
+                    CustomBgColor.Background = new System.Windows.Media.SolidColorBrush(color);
+                }
+                catch { CustomBgColor.Background = System.Windows.Media.Brushes.Transparent; }
+            }
+            else
+            {
+                CustomBgColor.Background = System.Windows.Media.Brushes.Transparent;
             }
         }
 
@@ -498,9 +548,15 @@ namespace ClipyFlow
         {
             try
             {
-                HideWindow();
+                if (!_data.Settings.IsWindowPinned)
+                {
+                    HideWindow();
+                }
                 
                 if (!_data.Settings.AutoPasteEnabled) return;
+
+                // If window is pinned, we shouldn't steal focus from ourselves with Ctrl+V because it will paste into ClipyFlow's search box.
+                if (_data.Settings.IsWindowPinned) return;
 
                 // Small delay to allow the previous window to regain focus
                 await System.Threading.Tasks.Task.Delay(150);

@@ -19,7 +19,12 @@
         <conv:HexToBrushConverter x:Key="HexToBrushConverter" />
     </Window.Resources>
     
-    <Grid Margin="10">
+    <Grid>
+        <!-- Custom Background Layer -->
+        <Border x:Name="CustomBgColor" Background="Transparent" />
+        <Image x:Name="CustomBgImage" Stretch="UniformToFill" />
+
+        <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -62,9 +67,13 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <ui:TextBox x:Name="InputSearch" Grid.Column="0" PlaceholderText="Search clipboard..." Icon="{ui:SymbolIcon Search24}" TextChanged="SearchBox_TextChanged" PreviewKeyDown="InputSearch_PreviewKeyDown" />
-                    <ui:Button x:Name="BtnClearHistory" Grid.Column="1" Margin="5,0,0,0" Icon="{ui:SymbolIcon Delete24}" Appearance="Danger" Click="ClearHistory_Click" ToolTip="Clear History" />
+                    <Primitives:ToggleButton xmlns:Primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework" x:Name="TogglePinWindow" Grid.Column="1" Margin="5,0,0,0" Background="Transparent" BorderThickness="0" ToolTip="Pin Window (Keep open)">
+                        <ui:SymbolIcon Symbol="Pin24" />
+                    </Primitives:ToggleButton>
+                    <ui:Button x:Name="BtnClearHistory" Grid.Column="2" Margin="5,0,0,0" Icon="{ui:SymbolIcon Delete24}" Appearance="Danger" Click="ClearHistory_Click" ToolTip="Clear History" />
                 </Grid>
 
                 <!-- Views -->
@@ -277,13 +286,12 @@
                     </TabControl>
 
                     <!-- Emoji List -->
-                    <local:EmojiControl x:Name="ViewEmoji" Visibility="Collapsed" EmojiSelected="EmojiControl_EmojiSelected" />
-
-                    <!-- GIF List -->
+                    <local:EmojiControl x:Name="ViewEmoji" Grid.Row="1" Visibility="Collapsed" EmojiSelected="EmojiControl_EmojiSelected" />
                     <local:GifControl x:Name="ViewGif" Visibility="Collapsed" GifSelected="GifControl_GifSelected" />
 
                 </Grid>
             </Grid>
         </Grid>
+    </Grid>
     </Grid>
 </ui:FluentWindow>

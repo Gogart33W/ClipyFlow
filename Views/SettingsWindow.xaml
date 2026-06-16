@@ -69,6 +69,40 @@
                     </Grid>
                 </ui:CardAction>
 
+                <TextBlock Text="Customization" FontSize="20" FontWeight="SemiBold" Margin="0,15,0,10" />
+                
+                <!-- Background Image -->
+                <StackPanel Margin="0,0,0,10">
+                    <TextBlock Text="Background Image" FontWeight="Medium" Margin="0,0,0,5" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:TextBox x:Name="TextBgPath" Grid.Column="0" Text="{Binding Settings.CustomBackgroundPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Select an image file..." Margin="0,0,5,0" />
+                        <ui:Button Grid.Column="1" Content="Browse" Click="BtnBrowseImage_Click" />
+                    </Grid>
+                </StackPanel>
+
+                <!-- Background Color -->
+                <StackPanel Margin="0,0,0,10">
+                    <TextBlock Text="Background Color (HEX)" FontWeight="Medium" Margin="0,0,0,5" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:TextBox x:Name="TextBgColor" Grid.Column="0" Text="{Binding Settings.CustomBackgroundColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="e.g. #FF0000 or #2A2A2A" Margin="0,0,5,0" />
+                        <ui:Button Grid.Column="1" Content="Clear" Click="BtnClearColor_Click" />
+                    </Grid>
+                </StackPanel>
+
+                <!-- Opacity -->
+                <StackPanel Margin="0,0,0,10">
+                    <TextBlock Text="Background Opacity" FontWeight="Medium" Margin="0,0,0,5" />
+                    <Slider x:Name="SliderOpacity" Minimum="0.1" Maximum="1.0" Value="{Binding Settings.CustomBackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="0.1" IsSnapToTickEnabled="True" />
+                </StackPanel>
+
                 <TextBlock Text="Integrations" FontSize="20" FontWeight="SemiBold" Margin="0,15,0,10" />
 
                 <!-- Tenor API Key -->

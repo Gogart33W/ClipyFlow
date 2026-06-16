@@ -25,6 +25,12 @@ namespace ClipyFlow.Services
         public string TenorApiKey { get; set; } = "LIVDSRZULELA"; // Default Tenor V1/V2 general key
         public bool AutoPasteEnabled { get; set; } = true;
         public string Theme { get; set; } = "System";
+        
+        // Customization
+        public bool IsWindowPinned { get; set; } = false;
+        public string CustomBackgroundPath { get; set; } = string.Empty;
+        public string CustomBackgroundColor { get; set; } = string.Empty;
+        public double CustomBackgroundOpacity { get; set; } = 0.5;
     }
 
     public class StorageService

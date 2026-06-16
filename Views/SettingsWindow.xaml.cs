@@ -12,6 +12,10 @@ namespace ClipyFlow.Views
         private readonly string _initialTenorApiKey;
         private readonly bool _initialAutoPasteEnabled;
         private readonly string _initialTheme;
+        
+        private readonly string _initialCustomBackgroundPath;
+        private readonly string _initialCustomBackgroundColor;
+        private readonly double _initialCustomBackgroundOpacity;
 
         public SettingsWindow(StorageService storageService, AppData data)
         {
@@ -24,6 +28,9 @@ namespace ClipyFlow.Views
             _initialTenorApiKey = _data.Settings.TenorApiKey ?? "";
             _initialAutoPasteEnabled = _data.Settings.AutoPasteEnabled;
             _initialTheme = _data.Settings.Theme ?? "";
+            _initialCustomBackgroundPath = _data.Settings.CustomBackgroundPath ?? "";
+            _initialCustomBackgroundColor = _data.Settings.CustomBackgroundColor ?? "";
+            _initialCustomBackgroundOpacity = _data.Settings.CustomBackgroundOpacity;
             
             // Set DataContext for binding
             DataContext = _data;
@@ -44,6 +51,9 @@ namespace ClipyFlow.Views
             _data.Settings.TenorApiKey = _initialTenorApiKey;
             _data.Settings.AutoPasteEnabled = _initialAutoPasteEnabled;
             _data.Settings.Theme = _initialTheme;
+            _data.Settings.CustomBackgroundPath = _initialCustomBackgroundPath;
+            _data.Settings.CustomBackgroundColor = _initialCustomBackgroundColor;
+            _data.Settings.CustomBackgroundOpacity = _initialCustomBackgroundOpacity;
             
             this.Close();
         }
@@ -63,7 +73,34 @@ namespace ClipyFlow.Views
                 Wpf.Ui.Appearance.ApplicationTheme.Unknown
             );
             
+            if (Application.Current.MainWindow is MainWindow main)
+            {
+                main.UpdateCustomBackground();
+            }
+            
             this.Close();
+        }
+
+        private void BtnBrowseImage_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Image Files (*.png;*.jpg;*.jpeg;*.gif;*.bmp)|*.png;*.jpg;*.jpeg;*.gif;*.bmp|All Files (*.*)|*.*",
+                Title = "Select Background Image"
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                _data.Settings.CustomBackgroundPath = dlg.FileName;
+                // Force UI update since it's not observable
+                TextBgPath.Text = dlg.FileName;
+            }
+        }
+
+        private void BtnClearColor_Click(object sender, RoutedEventArgs e)
+        {
+            _data.Settings.CustomBackgroundColor = string.Empty;
+            TextBgColor.Text = string.Empty;
         }
     }
 }
