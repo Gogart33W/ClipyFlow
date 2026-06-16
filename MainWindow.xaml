@@ -228,7 +228,13 @@
                     </ListView>
 
                     <!-- Snippets List -->
-                    <ListView x:Name="ViewSnippets" Visibility="Collapsed" ItemsSource="{Binding Snippets}" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="SnippetsList_MouseDoubleClick">
+                    <Grid x:Name="ViewSnippetsContainer" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        
+                        <ListView x:Name="ViewSnippets" Grid.Row="0" ItemsSource="{Binding Snippets}" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="SnippetsList_MouseDoubleClick">
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <Border CornerRadius="6" Background="{DynamicResource ControlFillColorDefaultBrush}" Margin="0,0,0,5" Padding="10">
@@ -272,6 +278,8 @@
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
+                    <ui:Button Grid.Row="1" Content="Create Template" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" HorizontalAlignment="Stretch" Margin="0,10,0,0" Click="AddSnippet_Click" ToolTip="Add a new custom snippet" />
+                </Grid>
 
                     <!-- Library List -->
                     <TabControl x:Name="ViewLibrary" Visibility="Collapsed" ItemsSource="{Binding LibraryCategories}" Background="Transparent" BorderThickness="0">
