@@ -378,14 +378,7 @@ namespace ClipyFlow
         {
             if (ViewHistory.Visibility == Visibility.Visible) return ViewHistory;
             if (ViewSnippetsContainer.Visibility == Visibility.Visible) return ViewSnippets;
-            if (ViewLibrary.Visibility == Visibility.Visible)
-            {
-                // Find the active ListView in the TabControl
-                if (ViewLibrary.ItemContainerGenerator.ContainerFromItem(ViewLibrary.SelectedItem) is System.Windows.Controls.TabItem tabItem)
-                {
-                    return FindVisualChild<System.Windows.Controls.ListView>(tabItem);
-                }
-            }
+            if (ViewLibrary.Visibility == Visibility.Visible) return LibrarySnippetList;
             return null;
         }
 
@@ -452,28 +445,104 @@ namespace ClipyFlow
         {
             if (sender is System.Windows.Controls.ListView listView && listView.SelectedItem is LanguageSnippet item)
             {
+                if (item.IsEditing) return;
                 item.UsageCount++;
                 
                 var parentCategory = LibraryCategories.FirstOrDefault(c => c.Snippets.Contains(item));
                 if (parentCategory != null)
                 {
                     parentCategory.TotalUsageCount++;
-                    
-                    // Resort snippets
-                    var sortedSnippets = parentCategory.Snippets.OrderByDescending(s => s.UsageCount).ToList();
-                    parentCategory.Snippets.Clear();
-                    foreach (var s in sortedSnippets) parentCategory.Snippets.Add(s);
                 }
-
-                // Resort categories
-                var sortedCategories = LibraryCategories.OrderByDescending(c => c.TotalUsageCount).ToList();
-                LibraryCategories.Clear();
-                foreach (var cat in sortedCategories) LibraryCategories.Add(cat);
-
                 SaveData();
-
                 CopyToClipboardText(item.Content);
                 listView.SelectedItem = null;
+            }
+        }
+
+        private void LibraryLangList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (LibraryLangList.SelectedItem is LanguageCategory cat)
+            {
+                LibrarySnippetList.ItemsSource = cat.Snippets;
+            }
+            else
+            {
+                LibrarySnippetList.ItemsSource = null;
+            }
+        }
+
+        private void LibrarySnippetEdit_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement el && el.DataContext is LanguageSnippet item)
+            {
+                item.IsEditing = true;
+                e.Handled = true;
+            }
+        }
+
+        private void LibrarySnippetSave_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement el && el.DataContext is LanguageSnippet item)
+            {
+                item.IsEditing = false;
+                SaveData();
+                e.Handled = true;
+            }
+        }
+
+        private void LibrarySnippetDelete_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement el && el.DataContext is LanguageSnippet item)
+            {
+                var cat = LibraryCategories.FirstOrDefault(c => c.Snippets.Contains(item));
+                if (cat != null)
+                {
+                    cat.Snippets.Remove(item);
+                    SaveData();
+                }
+                e.Handled = true;
+            }
+        }
+
+        private void AddLibrarySnippet_Click(object sender, RoutedEventArgs e)
+        {
+            if (LibraryLangList.SelectedItem is LanguageCategory cat)
+            {
+                var newSnippet = new LanguageSnippet
+                {
+                    Language = cat.LanguageName,
+                    Title = "New Template",
+                    Content = "",
+                    IsEditing = true
+                };
+                cat.Snippets.Insert(0, newSnippet);
+                LibrarySnippetList.ScrollIntoView(newSnippet);
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Select a language first.", "No language selected", System.Windows.MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void AddLanguage_Click(object sender, RoutedEventArgs e)
+        {
+            // Prompt for new language name via InputDialog workaround
+            var dialog = new Views.InputDialog("Add Language", "Enter language name (e.g. Python):");
+            _isInternalAction = true;
+            var result = dialog.ShowDialog();
+            _isInternalAction = false;
+            if (result == true && !string.IsNullOrWhiteSpace(dialog.InputText))
+            {
+                var existing = LibraryCategories.FirstOrDefault(c => c.LanguageName.Equals(dialog.InputText, StringComparison.OrdinalIgnoreCase));
+                if (existing != null)
+                {
+                    LibraryLangList.SelectedItem = existing;
+                    return;
+                }
+                var newCat = new LanguageCategory { LanguageName = dialog.InputText.Trim() };
+                LibraryCategories.Add(newCat);
+                LibraryLangList.SelectedItem = newCat;
+                SaveData();
             }
         }
 
@@ -755,13 +824,17 @@ namespace ClipyFlow
             ViewLibrary.Visibility = Visibility.Visible;
             ViewEmoji.Visibility = Visibility.Collapsed;
             ViewGif.Visibility = Visibility.Collapsed;
-            BtnClearHistory.Visibility = Visibility.Collapsed; // Hide clear on library
+            BtnClearHistory.Visibility = Visibility.Collapsed;
 
             BtnNavHistory.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavSnippets.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavLibrary.Appearance = Wpf.Ui.Controls.ControlAppearance.Primary;
             BtnNavEmoji.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavGif.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
+
+            // Auto-select first language
+            if (LibraryLangList.SelectedItem == null && LibraryCategories.Count > 0)
+                LibraryLangList.SelectedIndex = 0;
         }
 
         private void NavEmoji_Click(object sender, RoutedEventArgs e)

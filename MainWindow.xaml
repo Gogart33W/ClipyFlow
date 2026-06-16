@@ -282,39 +282,107 @@
                 </Grid>
 
                     <!-- Library List -->
-                    <TabControl x:Name="ViewLibrary" Visibility="Collapsed" ItemsSource="{Binding LibraryCategories}" Background="Transparent" BorderThickness="0">
-                        <TabControl.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding LanguageName}" FontWeight="Bold" Margin="5,0"/>
-                            </DataTemplate>
-                        </TabControl.ItemTemplate>
-                        <TabControl.ContentTemplate>
-                            <DataTemplate>
-                                <ListView ItemsSource="{Binding Snippets}" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="LibraryList_MouseDoubleClick">
+                    <Grid x:Name="ViewLibrary" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="110" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Language Selector -->
+                        <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="6" Margin="0,0,6,0" Padding="4">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <ListView x:Name="LibraryLangList" Grid.Row="0" BorderThickness="0" Background="Transparent"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          ItemsSource="{Binding LibraryCategories}"
+                                          SelectionChanged="LibraryLangList_SelectionChanged">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Padding" Value="6,4" />
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
                                     <ListView.ItemTemplate>
                                         <DataTemplate>
-                                            <Border CornerRadius="6" Background="{DynamicResource ControlFillColorDefaultBrush}" Margin="0,0,0,5" Padding="10">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
-                                                    
-                                                    <ui:SymbolIcon Grid.Column="0" Margin="0,0,10,0" FontSize="20" Symbol="Code24" Foreground="#D69D85" />
-                                                    <StackPanel Grid.Column="1" Margin="0,0,10,0">
-                                                        <TextBlock Text="{Binding Title}" FontWeight="Bold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                                                        <TextBlock Text="{Binding Content}" TextTrimming="CharacterEllipsis" MaxHeight="60" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                                                    </StackPanel>
-                                                    <TextBlock Grid.Column="2" Text="{Binding UsageCount, StringFormat='{}Used: {0}'}" Foreground="Gray" VerticalAlignment="Center" />
-                                                </Grid>
-                                            </Border>
+                                            <TextBlock Text="{Binding LanguageName}" FontWeight="SemiBold" FontSize="12" TextTrimming="CharacterEllipsis" />
                                         </DataTemplate>
                                     </ListView.ItemTemplate>
                                 </ListView>
-                            </DataTemplate>
-                        </TabControl.ContentTemplate>
-                    </TabControl>
+                                <ui:Button Grid.Row="1" Icon="{ui:SymbolIcon Add24}" Appearance="Transparent" HorizontalAlignment="Stretch" Margin="0,4,0,0" Click="AddLanguage_Click" ToolTip="Add new language" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Snippets for selected language -->
+                        <ListView x:Name="LibrarySnippetList" Grid.Row="0" Grid.Column="1" BorderThickness="0" Background="Transparent"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  MouseDoubleClick="LibraryList_MouseDoubleClick">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="Focusable" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListViewItem">
+                                                <ContentPresenter />
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="6" Background="{DynamicResource ControlFillColorDefaultBrush}" Margin="0,0,0,5" Padding="8">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <!-- View Mode Header -->
+                                            <Grid Grid.Row="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding Title}" FontWeight="Bold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                                                <ui:Button Grid.Column="1" Icon="{ui:SymbolIcon Edit24}" Appearance="Transparent" Padding="4" ToolTip="Edit" Click="LibrarySnippetEdit_Click" />
+                                                <ui:Button Grid.Column="2" Icon="{ui:SymbolIcon Delete24}" Appearance="Transparent" Foreground="#FF5555" Padding="4" ToolTip="Delete" Click="LibrarySnippetDelete_Click" />
+                                            </Grid>
+                                            <!-- View Mode Content -->
+                                            <TextBlock Grid.Row="1" Text="{Binding Content}" TextTrimming="CharacterEllipsis" MaxHeight="40" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontFamily="Consolas" FontSize="11">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <!-- Edit Mode -->
+                                            <StackPanel Grid.Row="2" Visibility="{Binding IsEditing, Converter={StaticResource BoolToVis}}" Margin="0,4,0,0">
+                                                <ui:TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Template name" Margin="0,0,0,4" />
+                                                <ui:TextBox Text="{Binding Content, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MaxHeight="100" PlaceholderText="Code here..." FontFamily="Consolas" FontSize="11" />
+                                                <ui:Button Content="Save" Appearance="Primary" Click="LibrarySnippetSave_Click" Margin="0,4,0,0" HorizontalAlignment="Right" Padding="10,2" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+
+                        <!-- Add Template Button -->
+                        <ui:Button Grid.Row="1" Grid.Column="1" Content="Add Template" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" HorizontalAlignment="Stretch" Margin="0,8,0,0" Click="AddLibrarySnippet_Click" ToolTip="Add a new template to this language" />
+                    </Grid>
 
                     <!-- Emoji List -->
                     <local:EmojiControl x:Name="ViewEmoji" Grid.Row="1" Visibility="Collapsed" EmojiSelected="EmojiControl_EmojiSelected" />
