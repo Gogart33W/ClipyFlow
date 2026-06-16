@@ -3,7 +3,7 @@ using System.Windows.Input;
 
 namespace ClipyFlow.Views
 {
-    public partial class InputDialog : Wpf.Ui.Controls.FluentWindow
+    public partial class InputDialog : Window
     {
         public string InputText => InputBox.Text;
         public string WindowTitle { get; set; }

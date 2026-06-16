@@ -7,7 +7,7 @@
         Title="ClipyFlow" Height="500" Width="400"
         Background="Transparent"
         ShowInTaskbar="False"
-        Icon="pack://application:,,,/Assets/icon.png"
+        Icon="pack://application:,,,/Assets/icon.ico"
         Visibility="Hidden"
         Topmost="True"
         WindowBackdropType="Mica"
