@@ -11,10 +11,17 @@
   <ItemGroup>
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.0" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
+    <PackageReference Include="XamlAnimatedGif" Version="2.3.2" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="Assets\icon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\emoji.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

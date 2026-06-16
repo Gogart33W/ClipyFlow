@@ -30,18 +30,24 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="60"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <!-- Sidebar -->
             <Border Grid.Column="0" Background="{DynamicResource ControlFillColorDefaultBrush}" BorderThickness="0,0,1,0" BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" Margin="0,-10,0,-10">
-                <StackPanel Margin="0,10,0,0">
-                    <ui:Button x:Name="BtnNavHistory" Icon="{ui:SymbolIcon Clock24}" Width="40" Height="40" Margin="10,5" Appearance="Primary" Click="NavHistory_Click" ToolTip="History" />
-                    <ui:Button x:Name="BtnNavSnippets" Icon="{ui:SymbolIcon Pin24}" Width="40" Height="40" Margin="10,5" Appearance="Transparent" Click="NavSnippets_Click" ToolTip="Pinned Snippets" />
-                    <ui:Button x:Name="BtnNavLibrary" Icon="{ui:SymbolIcon Code24}" Width="40" Height="40" Margin="10,5" Appearance="Transparent" Click="NavLibrary_Click" ToolTip="Smart Library" />
-                    <ui:Button x:Name="BtnNavEmoji" Icon="{ui:SymbolIcon Sticker24}" Width="40" Height="40" Margin="10,5" Appearance="Transparent" Click="NavEmoji_Click" ToolTip="Emoji" />
-                    <ui:Button x:Name="BtnNavGif" Icon="{ui:SymbolIcon Gif24}" Width="40" Height="40" Margin="10,5" Appearance="Transparent" Click="NavGif_Click" ToolTip="Tenor GIFs" />
-                </StackPanel>
+                <Grid>
+                    <StackPanel Margin="0,10,0,0">
+                        <ui:Button x:Name="BtnNavHistory" Icon="{ui:SymbolIcon Clock24}" Width="40" Height="40" Margin="10,5" Appearance="Primary" Click="NavHistory_Click" ToolTip="History" />
+                        <ui:Button x:Name="BtnNavSnippets" Icon="{ui:SymbolIcon Pin24}" Width="40" Height="40" Margin="10,5" Appearance="Transparent" Click="NavSnippets_Click" ToolTip="Pinned Snippets" />
+                        <ui:Button x:Name="BtnNavLibrary" Icon="{ui:SymbolIcon Code24}" Width="40" Height="40" Margin="10,5" Appearance="Transparent" Click="NavLibrary_Click" ToolTip="Smart Library" />
+                        <ui:Button x:Name="BtnNavEmoji" Icon="{ui:SymbolIcon Sticker24}" Width="40" Height="40" Margin="10,5" Appearance="Transparent" Click="NavEmoji_Click" ToolTip="Emoji" />
+                        <ui:Button x:Name="BtnNavGif" Icon="{ui:SymbolIcon Gif24}" Width="40" Height="40" Margin="10,5" Appearance="Transparent" Click="NavGif_Click" ToolTip="Tenor GIFs" />
+                    </StackPanel>
+                    <StackPanel VerticalAlignment="Bottom" Margin="0,0,0,10">
+                        <ui:Button x:Name="BtnNavSettings" Icon="{ui:SymbolIcon Settings24}" Width="40" Height="40" Margin="10,5" Appearance="Transparent" Click="NavSettings_Click" ToolTip="Settings" />
+                    </StackPanel>
+                </Grid>
             </Border>
 
             <!-- Content Area -->

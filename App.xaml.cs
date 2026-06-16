@@ -46,7 +46,8 @@ public partial class App : Application
                 autorun.SetAutorun(true);
             }
             
-            storage.SaveData(data); // save immediately to prevent asking again
+            data.IsFirstRun = false;
+            _ = storage.SaveDataAsync(data); // save immediately to prevent asking again
         }
 
         // Initialize TaskbarIcon

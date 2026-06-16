@@ -187,13 +187,14 @@ namespace ClipyFlow
 
         private void SaveData()
         {
-            var data = new AppData 
-            { 
-                History = new System.Collections.Generic.List<ClipboardItem>(History), 
-                Snippets = new System.Collections.Generic.List<SnippetItem>(Snippets),
-                LibraryCategories = new System.Collections.Generic.List<LanguageCategory>(LibraryCategories)
+            var data = new AppData
+            {
+                History = History.ToList(),
+                Snippets = Snippets.ToList(),
+                LibraryCategories = LibraryCategories.ToList(),
+                Settings = _data.Settings
             };
-            System.Threading.Tasks.Task.Run(() => _storage.SaveData(data));
+            _ = _storage.SaveDataAsync(data);
         }
 
         public void ShowAtCursor()
@@ -335,6 +336,14 @@ namespace ClipyFlow
             return null;
         }
 
+        private static T? FindVisualParent<T>(System.Windows.DependencyObject child) where T : System.Windows.DependencyObject
+        {
+            var parentObject = System.Windows.Media.VisualTreeHelper.GetParent(child);
+            if (parentObject == null) return null;
+            if (parentObject is T parent) return parent;
+            return FindVisualParent<T>(parentObject);
+        }
+
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
@@ -360,6 +369,11 @@ namespace ClipyFlow
 
         private void SnippetsList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            if (e.OriginalSource is DependencyObject source && FindVisualParent<System.Windows.Controls.ListViewItem>(source) == null)
+            {
+                return;
+            }
+
             if (sender is System.Windows.Controls.ListView listView && listView.SelectedItem is SnippetItem item)
             {
                 if (item.IsEditing) return; // Prevent copying if double-clicked to edit
@@ -552,7 +566,7 @@ namespace ClipyFlow
 
         private void SnippetText_DoubleClicked(object sender, MouseButtonEventArgs e)
         {
-            if (e.ClickCount == 2 && sender is FrameworkElement element && element.DataContext is SnippetItem item)
+            if (sender is FrameworkElement element && element.DataContext is SnippetItem item)
             {
                 item.IsEditing = true;
                 e.Handled = true;
@@ -694,9 +708,34 @@ namespace ClipyFlow
             ViewGif.Initialize(_data.Settings.TenorApiKey);
         }
 
-        private void GifControl_GifSelected(object sender, string gifUrl)
+        private async void GifControl_GifSelected(object sender, string gifUrl)
         {
-            CopyToClipboardText(gifUrl); // Just copy the URL for now
+            try
+            {
+                var client = new System.Net.Http.HttpClient();
+                var data = await client.GetByteArrayAsync(gifUrl);
+                string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "clipyflow_gif_" + Guid.NewGuid() + ".gif");
+                System.IO.File.WriteAllBytes(tempPath, data);
+
+                var dropList = new System.Collections.Specialized.StringCollection { tempPath };
+                Clipboard.SetFileDropList(dropList);
+                
+                // Add to history
+                History.Insert(0, new ClipboardItem
+                {
+                    Text = "Downloaded GIF",
+                    ItemType = ClipboardItemType.Image,
+                    CopiedAt = DateTime.Now,
+                    ImagePath = tempPath
+                });
+                if (History.Count > 100) History.RemoveAt(History.Count - 1);
+                SaveData();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Error downloading GIF: " + ex.Message);
+                CopyToClipboardText(gifUrl); // fallback
+            }
         }
 
         private void NavSettings_Click(object sender, RoutedEventArgs e)

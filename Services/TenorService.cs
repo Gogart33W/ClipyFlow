@@ -14,11 +14,10 @@ namespace ClipyFlow.Services
 
     public class TenorService
     {
-        private readonly HttpClient _httpClient;
+        private static readonly HttpClient _httpClient = new HttpClient();
         
         public TenorService()
         {
-            _httpClient = new HttpClient();
         }
 
         public async Task<List<GifItem>> GetFeaturedGifsAsync(string apiKey)

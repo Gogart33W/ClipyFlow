@@ -10,33 +10,45 @@ namespace ClipyFlow.Services
 
         public EmojiService()
         {
-            _allEmojis = new List<EmojiItem>
+            _allEmojis = new List<EmojiItem>();
+            LoadEmojis();
+        }
+
+        private void LoadEmojis()
+        {
+            try
             {
-                new EmojiItem { Character = "😀", Name = "grinning face", Category = "Smileys" },
-                new EmojiItem { Character = "😂", Name = "face with tears of joy", Category = "Smileys" },
-                new EmojiItem { Character = "😍", Name = "smiling face with heart-eyes", Category = "Smileys" },
-                new EmojiItem { Character = "🥰", Name = "smiling face with hearts", Category = "Smileys" },
-                new EmojiItem { Character = "😎", Name = "smiling face with sunglasses", Category = "Smileys" },
-                new EmojiItem { Character = "🤔", Name = "thinking face", Category = "Smileys" },
-                new EmojiItem { Character = "👍", Name = "thumbs up", Category = "People" },
-                new EmojiItem { Character = "👎", Name = "thumbs down", Category = "People" },
-                new EmojiItem { Character = "🙌", Name = "raising hands", Category = "People" },
-                new EmojiItem { Character = "👏", Name = "clapping hands", Category = "People" },
-                new EmojiItem { Character = "❤️", Name = "red heart", Category = "Symbols" },
-                new EmojiItem { Character = "🔥", Name = "fire", Category = "Objects" },
-                new EmojiItem { Character = "✨", Name = "sparkles", Category = "Symbols" },
-                new EmojiItem { Character = "⭐", Name = "star", Category = "Symbols" },
-                new EmojiItem { Character = "✅", Name = "check mark button", Category = "Symbols" },
-                new EmojiItem { Character = "❌", Name = "cross mark", Category = "Symbols" },
-                new EmojiItem { Character = "🚀", Name = "rocket", Category = "Travel" },
-                new EmojiItem { Character = "🎉", Name = "party popper", Category = "Objects" },
-                new EmojiItem { Character = "💻", Name = "laptop", Category = "Objects" },
-                new EmojiItem { Character = "📱", Name = "mobile phone", Category = "Objects" },
-                new EmojiItem { Character = "🐶", Name = "dog face", Category = "Animals" },
-                new EmojiItem { Character = "🐱", Name = "cat face", Category = "Animals" },
-                new EmojiItem { Character = "🍎", Name = "red apple", Category = "Food" },
-                new EmojiItem { Character = "🍕", Name = "pizza", Category = "Food" }
-            };
+                string path = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Assets", "emoji.json");
+                if (System.IO.File.Exists(path))
+                {
+                    string json = System.IO.File.ReadAllText(path);
+                    using var doc = System.Text.Json.JsonDocument.Parse(json);
+                    foreach (var element in doc.RootElement.EnumerateArray())
+                    {
+                        if (element.TryGetProperty("emoji", out var emojiProp) && element.TryGetProperty("description", out var descProp) && element.TryGetProperty("category", out var catProp))
+                        {
+                            _allEmojis.Add(new EmojiItem
+                            {
+                                Character = emojiProp.GetString() ?? "",
+                                Name = descProp.GetString() ?? "",
+                                Category = catProp.GetString() ?? ""
+                            });
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // fallback if missing or parsing fails
+            }
+            
+            if (_allEmojis.Count == 0)
+            {
+                // Fallback basic list
+                _allEmojis.Add(new EmojiItem { Character = "😀", Name = "grinning face", Category = "Smileys" });
+                _allEmojis.Add(new EmojiItem { Character = "❤️", Name = "red heart", Category = "Symbols" });
+                _allEmojis.Add(new EmojiItem { Character = "👍", Name = "thumbs up", Category = "People" });
+            }
         }
 
         public IEnumerable<EmojiItem> GetAll() => _allEmojis;

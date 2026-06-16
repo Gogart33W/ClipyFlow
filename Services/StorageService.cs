@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using ClipyFlow.Models;
 
 namespace ClipyFlow.Services
@@ -182,7 +184,7 @@ namespace ClipyFlow.Services
             }
         }
 
-        public async void SaveData(AppData data)
+        public async Task SaveDataAsync(AppData data)
         {
             await _fileLock.WaitAsync();
             try
