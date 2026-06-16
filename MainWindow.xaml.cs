@@ -499,6 +499,8 @@ namespace ClipyFlow
             try
             {
                 HideWindow();
+                
+                if (!_data.Settings.AutoPasteEnabled) return;
 
                 // Small delay to allow the previous window to regain focus
                 await System.Threading.Tasks.Task.Delay(150);
@@ -714,10 +716,27 @@ namespace ClipyFlow
             {
                 var client = new System.Net.Http.HttpClient();
                 var data = await client.GetByteArrayAsync(gifUrl);
-                string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "clipyflow_gif_" + Guid.NewGuid() + ".gif");
-                System.IO.File.WriteAllBytes(tempPath, data);
+                
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string imagesDir = System.IO.Path.Combine(appData, "ClipyFlow", "images");
+                if (!System.IO.Directory.Exists(imagesDir)) System.IO.Directory.CreateDirectory(imagesDir);
+                
+                string fileName = $"gif_{DateTime.Now:yyyyMMdd_HHmmss_fff}.gif";
+                string fullPath = System.IO.Path.Combine(imagesDir, fileName);
+                System.IO.File.WriteAllBytes(fullPath, data);
 
-                var dropList = new System.Collections.Specialized.StringCollection { tempPath };
+                // Cleanup old gifs (keep last 20)
+                var dir = new System.IO.DirectoryInfo(imagesDir);
+                var files = dir.GetFiles("gif_*.gif").OrderByDescending(f => f.CreationTime).ToList();
+                if (files.Count > 20)
+                {
+                    foreach (var file in files.Skip(20))
+                    {
+                        try { file.Delete(); } catch { }
+                    }
+                }
+
+                var dropList = new System.Collections.Specialized.StringCollection { fullPath };
                 Clipboard.SetFileDropList(dropList);
                 
                 // Add to history
@@ -726,7 +745,7 @@ namespace ClipyFlow
                     Text = "Downloaded GIF",
                     ItemType = ClipboardItemType.Image,
                     CopiedAt = DateTime.Now,
-                    ImagePath = tempPath
+                    ImagePath = fullPath
                 });
                 if (History.Count > 100) History.RemoveAt(History.Count - 1);
                 SaveData();

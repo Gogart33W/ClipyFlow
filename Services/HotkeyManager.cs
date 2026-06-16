@@ -43,10 +43,11 @@ namespace ClipyFlow.Services
                 {
                     _isRegistered = true;
                     System.Diagnostics.Debug.WriteLine("Global hotkey Alt+V registered.");
+                    return true;
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("Failed to register global hotkey Alt+V.");
+                    System.Diagnostics.Debug.WriteLine("Failed to register global hotkey. It might be in use.");
                     return false;
                 }
             }

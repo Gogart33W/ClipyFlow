@@ -57,6 +57,12 @@ namespace ClipyFlow.Views
             // Save all settings
             _ = _storageService.SaveDataAsync(_data);
             
+            Wpf.Ui.Appearance.ApplicationThemeManager.Apply(
+                _data.Settings.Theme == "Light" ? Wpf.Ui.Appearance.ApplicationTheme.Light :
+                _data.Settings.Theme == "Dark" ? Wpf.Ui.Appearance.ApplicationTheme.Dark :
+                Wpf.Ui.Appearance.ApplicationTheme.Unknown
+            );
+            
             this.Close();
         }
     }

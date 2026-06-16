@@ -216,9 +216,9 @@
                                         </StackPanel>
 
                                         <!-- View Mode -->
-                                        <StackPanel Grid.Column="1" Margin="0,0,10,0" Background="Transparent" MouseLeftButtonDown="SnippetText_DoubleClicked">
-                                            <StackPanel.Style>
-                                                <Style TargetType="StackPanel">
+                                        <ContentControl Grid.Column="1" Margin="0,0,10,0" Background="Transparent" MouseDoubleClick="SnippetText_DoubleClicked">
+                                            <ContentControl.Style>
+                                                <Style TargetType="ContentControl">
                                                     <Setter Property="Visibility" Value="Visible" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsEditing}" Value="True">
@@ -226,10 +226,12 @@
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </StackPanel.Style>
-                                            <TextBlock Text="{Binding Title}" FontWeight="Bold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                                            <TextBlock Text="{Binding Content}" TextTrimming="CharacterEllipsis" MaxHeight="20" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                                        </StackPanel>
+                                            </ContentControl.Style>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Title}" FontWeight="Bold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                                <TextBlock Text="{Binding Content}" TextTrimming="CharacterEllipsis" MaxHeight="20" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                            </StackPanel>
+                                        </ContentControl>
 
                                         <!-- Unpin Button -->
                                         <ui:Button Grid.Column="2" Icon="{ui:SymbolIcon Delete24}" Appearance="Transparent" Foreground="#FF5555" Click="UnpinSnippet_Click" ToolTip="Unpin Snippet" />

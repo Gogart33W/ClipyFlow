@@ -31,6 +31,12 @@ public partial class App : Application
 
         var storage = new StorageService();
         var data = storage.LoadData();
+        
+        Wpf.Ui.Appearance.ApplicationThemeManager.Apply(
+            data.Settings.Theme == "Light" ? Wpf.Ui.Appearance.ApplicationTheme.Light :
+            data.Settings.Theme == "Dark" ? Wpf.Ui.Appearance.ApplicationTheme.Dark :
+            Wpf.Ui.Appearance.ApplicationTheme.Unknown
+        );
 
         if (data.IsFirstRun)
         {

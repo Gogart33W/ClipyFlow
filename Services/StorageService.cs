@@ -22,7 +22,7 @@ namespace ClipyFlow.Services
     public class SettingsData
     {
         public bool StartWithWindows { get; set; } = false;
-        public string TenorApiKey { get; set; } = string.Empty;
+        public string TenorApiKey { get; set; } = "LIVDSRZULELA"; // Default Tenor V1/V2 general key
         public bool AutoPasteEnabled { get; set; } = true;
         public string Theme { get; set; } = "System";
     }
