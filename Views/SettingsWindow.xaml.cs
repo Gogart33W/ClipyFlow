@@ -33,8 +33,19 @@ namespace ClipyFlow.Views
             _initialCustomBackgroundOpacity = _data.Settings.CustomBackgroundOpacity;
             
             // Set DataContext for binding
-            DataContext = _data;
+            DataContext = this;
+            
+            ModernColors = new System.Collections.ObjectModel.ObservableCollection<string>
+            {
+                "#FF3B30", "#FF9500", "#FFCC00", "#34C759", "#00C7BE", "#007AFF", "#5856D6", "#AF52DE", "#FF2D55", "#8E8E93",
+                "#FF453A", "#FF9F0A", "#FFD60A", "#32D74B", "#64D2FF", "#0A84FF", "#5E5CE6", "#BF5AF2", "#FF375F", "#98989D",
+                "#D0021B", "#F5A623", "#F8E71C", "#8B572A", "#7ED321", "#417505", "#BD10E0", "#9013FE", "#4A90E2", "#50E3C2",
+                "#B8E986", "#000000", "#4A4A4A", "#9B9B9B", "#FFFFFF"
+            };
         }
+
+        public AppData Data => _data;
+        public System.Collections.ObjectModel.ObservableCollection<string> ModernColors { get; }
 
         private void AutorunToggle_Click(object sender, RoutedEventArgs e)
         {
@@ -99,19 +110,21 @@ namespace ClipyFlow.Views
             }
         }
 
-        private void Swatch_Click(object sender, RoutedEventArgs e)
+        private void BtnClearImage_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.Controls.Button btn && btn.Background is System.Windows.Media.SolidColorBrush brush)
-            {
-                var color = brush.Color;
-                var hexColor = $"#{color.R:X2}{color.G:X2}{color.B:X2}";
-                _data.Settings.CustomBackgroundColor = hexColor;
-            }
+            _data.Settings.CustomBackgroundPath = string.Empty;
+            TextBgPath.Text = string.Empty;
         }
 
         private void BtnClearColor_Click(object sender, RoutedEventArgs e)
         {
             _data.Settings.CustomBackgroundColor = string.Empty;
+        }
+
+        private void BtnClearOpacity_Click(object sender, RoutedEventArgs e)
+        {
+            _data.Settings.CustomBackgroundOpacity = 0.8;
+            SliderOpacity.Value = 0.8;
         }
 
         private void TextHotkey_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)

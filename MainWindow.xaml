@@ -108,6 +108,7 @@
                         <ListView x:Name="ViewHistory" Grid.Row="1" ItemsSource="{Binding History}" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
+                                <EventSetter Event="PreviewMouseLeftButtonUp" Handler="HistoryItem_PreviewMouseUp" />
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListViewItem">
@@ -115,7 +116,7 @@
                                                 <ContentPresenter />
                                             </Border>
                                             <ControlTemplate.Triggers>
-                                                <Trigger Property="IsSelected" Value="True">
+                                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
                                                     <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
                                                     <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
                                                 </Trigger>
@@ -136,7 +137,7 @@
                         </ListView.GroupStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <ui:CardAction Click="HistoryItem_Click" Margin="0,0,0,5" Padding="10">
+                                <Border Background="Transparent" Margin="0,0,0,5" Padding="10">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
@@ -243,7 +244,7 @@
                                             </ui:Button>
                                         </StackPanel>
                                     </Grid>
-                                </ui:CardAction>
+                                </Border>
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>

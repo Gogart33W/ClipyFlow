@@ -390,7 +390,7 @@ namespace ClipyFlow
 
         private System.Windows.Controls.ListView? GetActiveListView()
         {
-            if (ViewHistory.Visibility == Visibility.Visible) return ViewHistory;
+            if (ViewHistoryContainer.Visibility == Visibility.Visible) return ViewHistory;
             if (ViewSnippetsContainer.Visibility == Visibility.Visible) return ViewSnippets;
             if (ViewLibrary.Visibility == Visibility.Visible) return LibrarySnippetList;
             return null;
@@ -423,6 +423,27 @@ namespace ClipyFlow
             if (e.Key == Key.Escape)
             {
                 HideWindow();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Enter)
+            {
+                var activeListView = GetActiveListView();
+                if (activeListView != null)
+                {
+                    if (activeListView.SelectedItem == null && activeListView.Items.Count > 0)
+                    {
+                        activeListView.SelectedIndex = 0;
+                    }
+
+                    if (activeListView.SelectedItem != null)
+                    {
+                        if (activeListView.SelectedItem is ClipboardItem clipboardItem) CopyToClipboardItem(clipboardItem);
+                        else if (activeListView.SelectedItem is SnippetItem snippetItem) CopyToClipboardText(snippetItem.Content);
+                        else if (activeListView.SelectedItem is LanguageSnippet langSnippet) CopyToClipboardText(langSnippet.Content);
+                        
+                        e.Handled = true;
+                    }
+                }
             }
         }
 
@@ -433,10 +454,24 @@ namespace ClipyFlow
 
         private void HistoryItem_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is ClipboardItem item)
+            if (sender is FrameworkElement el && el.DataContext is ClipboardItem item)
             {
                 CopyToClipboardItem(item);
-                ViewHistory.SelectedItem = null;
+            }
+        }
+
+        private void HistoryItem_PreviewMouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource is System.Windows.DependencyObject src)
+            {
+                var button = FindVisualParent<System.Windows.Controls.Primitives.ButtonBase>(src);
+                if (button != null) return;
+            }
+
+            if (sender is System.Windows.Controls.ListViewItem lvi && lvi.DataContext is ClipboardItem item)
+            {
+                CopyToClipboardItem(item);
+                e.Handled = true;
             }
         }
 
@@ -831,7 +866,7 @@ namespace ClipyFlow
 
         private void NavHistory_Click(object sender, RoutedEventArgs e)
         {
-            ViewHistory.Visibility = Visibility.Visible;
+            ViewHistoryContainer.Visibility = Visibility.Visible;
             ViewSnippetsContainer.Visibility = Visibility.Collapsed;
             ViewLibrary.Visibility = Visibility.Collapsed;
             ViewEmoji.Visibility = Visibility.Collapsed;
@@ -847,7 +882,7 @@ namespace ClipyFlow
 
         private void NavSnippets_Click(object sender, RoutedEventArgs e)
         {
-            ViewHistory.Visibility = Visibility.Collapsed;
+            ViewHistoryContainer.Visibility = Visibility.Collapsed;
             ViewSnippetsContainer.Visibility = Visibility.Visible;
             ViewLibrary.Visibility = Visibility.Collapsed;
             ViewEmoji.Visibility = Visibility.Collapsed;
@@ -863,7 +898,7 @@ namespace ClipyFlow
 
         private void NavLibrary_Click(object sender, RoutedEventArgs e)
         {
-            ViewHistory.Visibility = Visibility.Collapsed;
+            ViewHistoryContainer.Visibility = Visibility.Collapsed;
             ViewSnippetsContainer.Visibility = Visibility.Collapsed;
             ViewLibrary.Visibility = Visibility.Visible;
             ViewEmoji.Visibility = Visibility.Collapsed;
@@ -883,7 +918,7 @@ namespace ClipyFlow
 
         private void NavEmoji_Click(object sender, RoutedEventArgs e)
         {
-            ViewHistory.Visibility = Visibility.Collapsed;
+            ViewHistoryContainer.Visibility = Visibility.Collapsed;
             ViewSnippetsContainer.Visibility = Visibility.Collapsed;
             ViewLibrary.Visibility = Visibility.Collapsed;
             ViewEmoji.Visibility = Visibility.Visible;
@@ -904,7 +939,7 @@ namespace ClipyFlow
 
         private void NavGif_Click(object sender, RoutedEventArgs e)
         {
-            ViewHistory.Visibility = Visibility.Collapsed;
+            ViewHistoryContainer.Visibility = Visibility.Collapsed;
             ViewSnippetsContainer.Visibility = Visibility.Collapsed;
             ViewLibrary.Visibility = Visibility.Collapsed;
             ViewEmoji.Visibility = Visibility.Collapsed;

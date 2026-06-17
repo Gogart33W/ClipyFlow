@@ -52,7 +52,7 @@
                             <TextBlock Text="Start with Windows" FontWeight="Medium" />
                             <TextBlock Text="Run ClipyFlow automatically when you sign in" Foreground="Gray" FontSize="12" />
                         </StackPanel>
-                        <ui:ToggleSwitch x:Name="ToggleAutorun" Grid.Column="1" IsChecked="{Binding Settings.StartWithWindows, Mode=TwoWay}" />
+                        <ui:ToggleSwitch x:Name="ToggleAutorun" Grid.Column="1" IsChecked="{Binding Data.Settings.StartWithWindows, Mode=TwoWay}" />
                     </Grid>
                 </ui:CardAction>
 
@@ -67,7 +67,7 @@
                             <TextBlock Text="Auto Paste" FontWeight="Medium" />
                             <TextBlock Text="Automatically paste items after clicking" Foreground="Gray" FontSize="12" />
                         </StackPanel>
-                        <ui:ToggleSwitch x:Name="ToggleAutoPaste" Grid.Column="1" IsChecked="{Binding Settings.AutoPasteEnabled, Mode=TwoWay}" />
+                        <ui:ToggleSwitch x:Name="ToggleAutoPaste" Grid.Column="1" IsChecked="{Binding Data.Settings.AutoPasteEnabled, Mode=TwoWay}" />
                     </Grid>
                 </ui:CardAction>
 
@@ -82,7 +82,7 @@
                             <TextBlock Text="Theme" FontWeight="Medium" />
                             <TextBlock Text="Select application theme" Foreground="Gray" FontSize="12" />
                         </StackPanel>
-                        <ComboBox x:Name="ComboTheme" Grid.Column="1" Width="120" SelectedItem="{Binding Settings.Theme, Mode=TwoWay}">
+                        <ComboBox x:Name="ComboTheme" Grid.Column="1" Width="120" SelectedItem="{Binding Data.Settings.Theme, Mode=TwoWay}">
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">System</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">Light</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">Dark</System:String>
@@ -101,7 +101,7 @@
                             <TextBlock Text="Global Hotkey" FontWeight="Medium" />
                             <TextBlock Text="Press to open ClipyFlow" Foreground="Gray" FontSize="12" />
                         </StackPanel>
-                        <ui:TextBox x:Name="TextHotkey" Grid.Column="1" Width="120" Text="{Binding Settings.GlobalHotkey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Alt+V" PreviewKeyDown="TextHotkey_PreviewKeyDown" IsReadOnly="True" Cursor="Hand" ToolTip="Click and press keys to record" />
+                        <ui:TextBox x:Name="TextHotkey" Grid.Column="1" Width="120" Text="{Binding Data.Settings.GlobalHotkey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Alt+V" PreviewKeyDown="TextHotkey_PreviewKeyDown" IsReadOnly="True" Cursor="Hand" ToolTip="Click and press keys to record" />
                     </Grid>
                 </ui:CardAction>
 
@@ -109,39 +109,69 @@
                 
                 <!-- Background Image -->
                 <StackPanel Margin="0,0,0,10">
-                    <TextBlock Text="Background Image" FontWeight="Medium" Margin="0,0,0,5" />
+                    <Grid Margin="0,0,0,5">
+                        <TextBlock Text="Background Image" FontWeight="Medium" VerticalAlignment="Center" />
+                        <ui:Button Appearance="Transparent" Icon="{ui:SymbolIcon ArrowUndo24}" Click="BtnClearImage_Click" HorizontalAlignment="Right" Padding="4" ToolTip="Reset to Default" />
+                    </Grid>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <ui:TextBox x:Name="TextBgPath" Grid.Column="0" Text="{Binding Settings.CustomBackgroundPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Select an image file..." Margin="0,0,5,0" />
+                        <ui:TextBox x:Name="TextBgPath" Grid.Column="0" Text="{Binding Data.Settings.CustomBackgroundPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Select an image file..." Margin="0,0,5,0" />
                         <ui:Button Grid.Column="1" Content="Browse" Click="BtnBrowseImage_Click" />
                     </Grid>
                 </StackPanel>
 
                 <!-- Background Color Swatches -->
                 <StackPanel Margin="0,0,0,10">
-                    <TextBlock Text="Window Accent Color" FontWeight="Medium" Margin="0,0,0,5" />
-                    <WrapPanel Margin="0,0,0,5">
-                        <Button Style="{StaticResource SwatchStyle}" Background="#FF3B30" Click="Swatch_Click"/>
-                        <Button Style="{StaticResource SwatchStyle}" Background="#FF9500" Click="Swatch_Click"/>
-                        <Button Style="{StaticResource SwatchStyle}" Background="#FFCC00" Click="Swatch_Click"/>
-                        <Button Style="{StaticResource SwatchStyle}" Background="#34C759" Click="Swatch_Click"/>
-                        <Button Style="{StaticResource SwatchStyle}" Background="#00C7BE" Click="Swatch_Click"/>
-                        <Button Style="{StaticResource SwatchStyle}" Background="#007AFF" Click="Swatch_Click"/>
-                        <Button Style="{StaticResource SwatchStyle}" Background="#5856D6" Click="Swatch_Click"/>
-                        <Button Style="{StaticResource SwatchStyle}" Background="#AF52DE" Click="Swatch_Click"/>
-                        <Button Style="{StaticResource SwatchStyle}" Background="#FF2D55" Click="Swatch_Click"/>
-                        <Button Style="{StaticResource SwatchStyle}" Background="#8E8E93" Click="Swatch_Click"/>
-                    </WrapPanel>
-                    <ui:Button Content="Reset to Default" Click="BtnClearColor_Click" />
+                    <Grid Margin="0,0,0,5">
+                        <TextBlock Text="Window Accent Color" FontWeight="Medium" VerticalAlignment="Center" />
+                        <ui:Button Appearance="Transparent" Icon="{ui:SymbolIcon ArrowUndo24}" Click="BtnClearColor_Click" HorizontalAlignment="Right" Padding="4" ToolTip="Reset to Default" />
+                    </Grid>
+                    <ListBox ItemsSource="{Binding ModernColors}" 
+                             SelectedItem="{Binding Data.Settings.CustomBackgroundColor, Mode=TwoWay}" 
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" 
+                             BorderThickness="0" Background="Transparent" Padding="0">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Margin="0" />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="2" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="Bd" Width="30" Height="30" CornerRadius="15" Background="{Binding}" BorderThickness="3" BorderBrush="Transparent" Cursor="Hand">
+                                                <ui:SymbolIcon x:Name="CheckIcon" Symbol="Checkmark24" Foreground="White" Visibility="Collapsed" FontSize="16"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                                                    <Setter TargetName="CheckIcon" Property="Visibility" Value="Visible" />
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                    </ListBox>
                 </StackPanel>
 
                 <!-- Opacity -->
                 <StackPanel Margin="0,0,0,10">
-                    <TextBlock Text="Background Opacity" FontWeight="Medium" Margin="0,0,0,5" />
-                    <Slider x:Name="SliderOpacity" Minimum="0.1" Maximum="1.0" Value="{Binding Settings.CustomBackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="0.1" IsSnapToTickEnabled="True" />
+                    <Grid Margin="0,0,0,5">
+                        <TextBlock Text="Background Opacity" FontWeight="Medium" VerticalAlignment="Center" />
+                        <ui:Button Appearance="Transparent" Icon="{ui:SymbolIcon ArrowUndo24}" Click="BtnClearOpacity_Click" HorizontalAlignment="Right" Padding="4" ToolTip="Reset to Default" />
+                    </Grid>
+                    <Slider x:Name="SliderOpacity" Minimum="0.1" Maximum="1.0" Value="{Binding Data.Settings.CustomBackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="0.1" IsSnapToTickEnabled="True" />
                 </StackPanel>
 
                 <TextBlock Text="Integrations" FontSize="20" FontWeight="SemiBold" Margin="0,15,0,10" />
@@ -149,7 +179,7 @@
                 <!-- Tenor API Key -->
                 <StackPanel>
                     <TextBlock Text="Tenor API Key (for GIFs)" FontWeight="Medium" Margin="0,0,0,5" />
-                    <ui:TextBox x:Name="TextTenorApiKey" Text="{Binding Settings.TenorApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Enter your Google Tenor API key here" />
+                    <ui:TextBox x:Name="TextTenorApiKey" Text="{Binding Data.Settings.TenorApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Enter your Google Tenor API key here" />
                     <TextBlock Text="Leave empty to disable GIF search." Foreground="Gray" FontSize="12" Margin="0,5,0,0" />
                 </StackPanel>
                 
