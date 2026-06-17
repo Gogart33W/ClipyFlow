@@ -78,6 +78,8 @@ namespace ClipyFlow.Views
                 main.UpdateCustomBackground();
             }
             
+            App.UpdateGlobalHotkey(_data.Settings.GlobalHotkey);
+            
             this.Close();
         }
 

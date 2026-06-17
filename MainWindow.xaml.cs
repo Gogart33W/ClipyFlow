@@ -108,7 +108,8 @@ namespace ClipyFlow
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool SetForegroundWindow(IntPtr hWnd);
 
-        private IntPtr _previousForegroundWindow;
+        private nint _previousForegroundWindow;
+        private static readonly System.Net.Http.HttpClient _httpClient = new System.Net.Http.HttpClient();
 
         public MainWindow(StorageService storage, AppData data)
         {
@@ -559,6 +560,24 @@ namespace ClipyFlow
             }
         }
 
+        private void DeleteLanguage_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement el && el.DataContext is LanguageCategory cat)
+            {
+                var result = System.Windows.MessageBox.Show($"Are you sure you want to delete '{cat.LanguageName}' and all its templates?", "Delete Language", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning);
+                if (result == System.Windows.MessageBoxResult.Yes)
+                {
+                    LibraryCategories.Remove(cat);
+                    if (LibraryLangList.SelectedItem == cat)
+                    {
+                        LibrarySnippetList.ItemsSource = null;
+                    }
+                    SaveData();
+                }
+                e.Handled = true;
+            }
+        }
+
         private System.Windows.Threading.DispatcherTimer? _searchTimer;
 
         private void SearchBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -819,7 +838,7 @@ namespace ClipyFlow
             ViewGif.Visibility = Visibility.Collapsed;
             BtnClearHistory.Visibility = Visibility.Visible;
 
-            BtnNavHistory.Appearance = Wpf.Ui.Controls.ControlAppearance.Primary;
+            BtnNavHistory.Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary;
             BtnNavSnippets.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavLibrary.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavEmoji.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
@@ -836,7 +855,7 @@ namespace ClipyFlow
             BtnClearHistory.Visibility = Visibility.Collapsed; // Hide clear on snippets
 
             BtnNavHistory.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
-            BtnNavSnippets.Appearance = Wpf.Ui.Controls.ControlAppearance.Primary;
+            BtnNavSnippets.Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary;
             BtnNavLibrary.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavEmoji.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavGif.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
@@ -853,7 +872,7 @@ namespace ClipyFlow
 
             BtnNavHistory.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavSnippets.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
-            BtnNavLibrary.Appearance = Wpf.Ui.Controls.ControlAppearance.Primary;
+            BtnNavLibrary.Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary;
             BtnNavEmoji.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavGif.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
 
@@ -874,7 +893,7 @@ namespace ClipyFlow
             BtnNavHistory.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavSnippets.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavLibrary.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
-            BtnNavEmoji.Appearance = Wpf.Ui.Controls.ControlAppearance.Primary;
+            BtnNavEmoji.Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary;
             BtnNavGif.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
         }
 
@@ -896,7 +915,7 @@ namespace ClipyFlow
             BtnNavSnippets.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavLibrary.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
             BtnNavEmoji.Appearance = Wpf.Ui.Controls.ControlAppearance.Transparent;
-            BtnNavGif.Appearance = Wpf.Ui.Controls.ControlAppearance.Primary;
+            BtnNavGif.Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary;
             
             ViewGif.Initialize(_data.Settings.TenorApiKey);
         }
@@ -905,41 +924,50 @@ namespace ClipyFlow
         {
             try
             {
-                var client = new System.Net.Http.HttpClient();
-                var data = await client.GetByteArrayAsync(gifUrl);
+                var data = await _httpClient.GetByteArrayAsync(gifUrl);
                 
                 string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 string imagesDir = System.IO.Path.Combine(appData, "ClipyFlow", "images");
                 if (!System.IO.Directory.Exists(imagesDir)) System.IO.Directory.CreateDirectory(imagesDir);
                 
-                string fileName = $"gif_{DateTime.Now:yyyyMMdd_HHmmss_fff}.gif";
-                string fullPath = System.IO.Path.Combine(imagesDir, fileName);
-                System.IO.File.WriteAllBytes(fullPath, data);
-
-                // Cleanup old gifs (keep last 20)
-                var dir = new System.IO.DirectoryInfo(imagesDir);
-                var files = dir.GetFiles("gif_*.gif").OrderByDescending(f => f.CreationTime).ToList();
-                if (files.Count > 20)
+                using (var md5 = System.Security.Cryptography.MD5.Create())
                 {
-                    foreach (var file in files.Skip(20))
+                    var hashBytes = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(gifUrl));
+                    string hashStr = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+                    string fileName = $"gif_{hashStr}.gif";
+                    string fullPath = System.IO.Path.Combine(imagesDir, fileName);
+                    
+                    if (!System.IO.File.Exists(fullPath))
                     {
-                        try { file.Delete(); } catch { }
+                        System.IO.File.WriteAllBytes(fullPath, data);
                     }
-                }
 
-                var dropList = new System.Collections.Specialized.StringCollection { fullPath };
-                Clipboard.SetFileDropList(dropList);
-                
-                // Add to history
-                History.Insert(0, new ClipboardItem
-                {
-                    Text = "Downloaded GIF",
-                    ItemType = ClipboardItemType.Image,
-                    CopiedAt = DateTime.Now,
-                    ImagePath = fullPath
-                });
-                if (History.Count > 100) History.RemoveAt(History.Count - 1);
-                SaveData();
+                    // Cleanup old gifs (keep last 20)
+                    var dir = new System.IO.DirectoryInfo(imagesDir);
+                    var files = dir.GetFiles("gif_*.gif").OrderByDescending(f => f.CreationTime).ToList();
+                    if (files.Count > 20)
+                    {
+                        foreach (var file in files.Skip(20))
+                        {
+                            try { file.Delete(); } catch { }
+                        }
+                    }
+
+                    var dropList = new System.Collections.Specialized.StringCollection { fullPath };
+                    Clipboard.SetFileDropList(dropList);
+                    
+                    var newItem = new ClipboardItem
+                    {
+                        Text = "Downloaded GIF",
+                        ItemType = ClipboardItemType.Image,
+                        CopiedAt = DateTime.Now,
+                        ImagePath = fullPath
+                    };
+                    
+                    _isInternalAction = true;
+                    AddItem(newItem);
+                    _isInternalAction = false;
+                }
             }
             catch (Exception ex)
             {

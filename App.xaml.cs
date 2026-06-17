@@ -67,7 +67,7 @@ public partial class App : Application
         var contextMenu = new System.Windows.Controls.ContextMenu();
         
         var showItem = new System.Windows.Controls.MenuItem { Header = "Show ClipyFlow (Alt+V)" };
-        showItem.Click += (s, ev) => _mainWindow?.ShowAtCursor(false);
+        showItem.Click += (s, ev) => _mainWindow?.ShowAtCursor(true);
         
         var exitItem = new System.Windows.Controls.MenuItem { Header = "Exit" };
         exitItem.Click += (s, ev) => Application.Current.Shutdown();
@@ -77,7 +77,7 @@ public partial class App : Application
         contextMenu.Items.Add(exitItem);
 
         _taskbarIcon.ContextMenu = contextMenu;
-        _taskbarIcon.TrayLeftMouseUp += (s, ev) => _mainWindow?.ShowAtCursor(false);
+        _taskbarIcon.TrayLeftMouseUp += (s, ev) => _mainWindow?.ShowAtCursor(true);
 
         // Initialize hidden main window
         _mainWindow = new MainWindow(storage, data);
@@ -108,9 +108,23 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _hotkeyManager?.Dispose();
-        _clipboardManager?.Dispose();
+        _clipboardManager?.StopListening();
+        _hotkeyManager?.Stop();
         _taskbarIcon?.Dispose();
         base.OnExit(e);
+    }
+
+    public static void UpdateGlobalHotkey(string newHotkey)
+    {
+        if (Application.Current is App app && app._hotkeyManager != null && app._mainWindow != null)
+        {
+            app._hotkeyManager.Stop();
+            var helper = new WindowInteropHelper(app._mainWindow);
+            bool success = app._hotkeyManager.Start(helper.Handle, newHotkey);
+            if (!success && app._taskbarIcon != null)
+            {
+                app._taskbarIcon.ShowBalloonTip("ClipyFlow", $"Failed to register {newHotkey} hotkey.", BalloonIcon.Warning);
+            }
+        }
     }
 }

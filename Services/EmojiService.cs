@@ -18,10 +18,12 @@ namespace ClipyFlow.Services
         {
             try
             {
-                string path = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Assets", "emoji.json");
-                if (System.IO.File.Exists(path))
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                using var stream = assembly.GetManifestResourceStream("ClipyFlow.Assets.emoji.json");
+                if (stream != null)
                 {
-                    string json = System.IO.File.ReadAllText(path, System.Text.Encoding.UTF8);
+                    using var reader = new System.IO.StreamReader(stream, System.Text.Encoding.UTF8);
+                    string json = reader.ReadToEnd();
                     using var doc = System.Text.Json.JsonDocument.Parse(json);
                     foreach (var element in doc.RootElement.EnumerateArray())
                     {

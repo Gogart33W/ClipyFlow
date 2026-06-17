@@ -108,7 +108,6 @@
                         <ListView x:Name="ViewHistory" Grid.Row="1" ItemsSource="{Binding History}" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
-                                <Setter Property="Focusable" Value="False"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListViewItem">
@@ -316,7 +315,7 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Language Selector -->
-                        <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="6" Margin="0,0,6,0" Padding="4">
+                        <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Background="Transparent" CornerRadius="6" Margin="0,0,6,0" Padding="4">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*" />
@@ -334,7 +333,13 @@
                                     </ListView.ItemContainerStyle>
                                     <ListView.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding LanguageName}" FontWeight="SemiBold" FontSize="12" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                            <TextBlock Text="{Binding LanguageName}" FontWeight="SemiBold" FontSize="12" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                                                <TextBlock.ContextMenu>
+                                                    <ContextMenu>
+                                                        <MenuItem Header="Delete Language" Click="DeleteLanguage_Click" />
+                                                    </ContextMenu>
+                                                </TextBlock.ContextMenu>
+                                            </TextBlock>
                                         </DataTemplate>
                                     </ListView.ItemTemplate>
                                 </ListView>
@@ -348,7 +353,6 @@
                                   MouseDoubleClick="LibraryList_MouseDoubleClick">
                             <ListView.ItemContainerStyle>
                                 <Style TargetType="ListViewItem">
-                                    <Setter Property="Focusable" Value="False" />
                                     <Setter Property="Template">
                                         <Setter.Value>
                                         <ControlTemplate TargetType="ListViewItem">
