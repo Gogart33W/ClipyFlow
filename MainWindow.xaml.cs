@@ -21,6 +21,7 @@ namespace ClipyFlow
         private readonly AppData _data;
         private bool _isInternalAction = false;
         private bool _ignoreNextImage = false;
+        private bool _pasteEnabledOnNextClick = true;
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -169,6 +170,9 @@ namespace ClipyFlow
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
+            _data.Settings.IsWindowPinned = false;
+            TogglePinWindow.IsChecked = false;
+            SaveData();
             HideWindow();
         }
 
@@ -203,12 +207,17 @@ namespace ClipyFlow
                 {
                     var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(_data.Settings.CustomBackgroundColor);
                     CustomBgColor.Background = new System.Windows.Media.SolidColorBrush(color);
+                    this.WindowBackdropType = Wpf.Ui.Controls.WindowBackdropType.None;
                 }
-                catch { CustomBgColor.Background = System.Windows.Media.Brushes.Transparent; }
+                catch { CustomBgColor.Background = System.Windows.Media.Brushes.Transparent; this.WindowBackdropType = Wpf.Ui.Controls.WindowBackdropType.Mica; }
             }
             else
             {
                 CustomBgColor.Background = System.Windows.Media.Brushes.Transparent;
+                if (CustomBgImage.Source == null)
+                    this.WindowBackdropType = Wpf.Ui.Controls.WindowBackdropType.Mica;
+                else
+                    this.WindowBackdropType = Wpf.Ui.Controls.WindowBackdropType.None;
             }
         }
 
@@ -230,7 +239,9 @@ namespace ClipyFlow
                 }
 
                 // Check for duplicate
-                var existing = History.FirstOrDefault(x => x.Text == item.Text);
+                var existing = History.FirstOrDefault(x => 
+                    (item.ItemType == ClipboardItemType.Image && x.ItemType == ClipboardItemType.Image && x.ImagePath == item.ImagePath) ||
+                    (item.ItemType != ClipboardItemType.Image && x.ItemType != ClipboardItemType.Image && x.Text == item.Text));
                 if (existing != null)
                 {
                     History.Remove(existing);
@@ -262,8 +273,9 @@ namespace ClipyFlow
             _ = _storage.SaveDataAsync(data);
         }
 
-        public void ShowAtCursor()
+        public void ShowAtCursor(bool pasteEnabled = true)
         {
+            _pasteEnabledOnNextClick = pasteEnabled;
             _previousForegroundWindow = GetForegroundWindow();
             this.Show(); // Show first to ensure PresentationSource is valid
             this.Activate();
@@ -330,6 +342,7 @@ namespace ClipyFlow
         {
             this.Hide();
             InputSearch.Text = string.Empty; // Clear search for next time
+            ViewGif.ClearMemory(); // Clear GIF memory to prevent caching
         }
 
         private void InputSearch_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -564,15 +577,27 @@ namespace ClipyFlow
             _searchTimer.Start();
         }
 
+        private void FilterHistoryCombo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            ApplySearchFilter();
+        }
+
         private void ApplySearchFilter()
         {
             string query = InputSearch.Text.ToLowerInvariant();
+            int filterIndex = FilterHistoryCombo?.SelectedIndex ?? 0;
+            
             var historyView = System.Windows.Data.CollectionViewSource.GetDefaultView(History);
             historyView.Filter = item => 
             {
-                if (string.IsNullOrWhiteSpace(query)) return true;
                 if (item is ClipboardItem c) 
                 {
+                    if (filterIndex == 1 && c.ItemType != ClipboardItemType.Text) return false;
+                    if (filterIndex == 2 && c.ItemType != ClipboardItemType.Link) return false;
+                    if (filterIndex == 3 && c.ItemType != ClipboardItemType.Code) return false;
+                    if (filterIndex == 4 && c.ItemType != ClipboardItemType.Image) return false;
+
+                    if (string.IsNullOrWhiteSpace(query)) return true;
                     if (c.ItemType == ClipboardItemType.Image && query != "image") return false;
                     return c.Text.ToLowerInvariant().Contains(query);
                 }
@@ -638,7 +663,7 @@ namespace ClipyFlow
                     HideWindow();
                 }
                 
-                if (!_data.Settings.AutoPasteEnabled) return;
+                if (!_data.Settings.AutoPasteEnabled || !_pasteEnabledOnNextClick) return;
 
                 // If window is pinned, we shouldn't steal focus from ourselves with Ctrl+V because it will paste into ClipyFlow's search box.
                 if (_data.Settings.IsWindowPinned)

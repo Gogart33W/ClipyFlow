@@ -29,7 +29,25 @@ namespace ClipyFlow.Services
         private bool _isRegistered;
         public event EventHandler? HotkeyPressed;
 
-        public bool Start(IntPtr windowHandle)
+        private void ParseHotkey(string hotkeyStr, out uint modifiers, out uint vk)
+        {
+            modifiers = 0;
+            vk = 0;
+            if (string.IsNullOrEmpty(hotkeyStr)) return;
+
+            if (hotkeyStr.Contains("Ctrl+")) modifiers |= 0x0002; // MOD_CONTROL
+            if (hotkeyStr.Contains("Alt+")) modifiers |= 0x0001; // MOD_ALT
+            if (hotkeyStr.Contains("Shift+")) modifiers |= 0x0004; // MOD_SHIFT
+            if (hotkeyStr.Contains("Win+")) modifiers |= 0x0008; // MOD_WIN
+
+            string keyPart = hotkeyStr.Contains("+") ? hotkeyStr.Substring(hotkeyStr.LastIndexOf('+') + 1) : hotkeyStr;
+            if (Enum.TryParse<System.Windows.Input.Key>(keyPart, true, out var key))
+            {
+                vk = (uint)System.Windows.Input.KeyInterop.VirtualKeyFromKey(key);
+            }
+        }
+
+        public bool Start(IntPtr windowHandle, string hotkeyStr)
         {
             if (_isRegistered) return true;
 
@@ -37,12 +55,20 @@ namespace ClipyFlow.Services
             if (_hwndSource != null)
             {
                 _hwndSource.AddHook(HwndHook);
-                bool success = RegisterHotKey(windowHandle, HOTKEY_ID, MOD_ALT, VK_V);
+                
+                ParseHotkey(hotkeyStr, out uint modifiers, out uint vk);
+                if (vk == 0) // Fallback to Alt+V
+                {
+                    modifiers = MOD_ALT;
+                    vk = VK_V;
+                }
+
+                bool success = RegisterHotKey(windowHandle, HOTKEY_ID, modifiers, vk);
                 
                 if (success)
                 {
                     _isRegistered = true;
-                    System.Diagnostics.Debug.WriteLine("Global hotkey Alt+V registered.");
+                    System.Diagnostics.Debug.WriteLine($"Global hotkey {hotkeyStr} registered.");
                     return true;
                 }
                 else

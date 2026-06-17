@@ -19,6 +19,11 @@ namespace ClipyFlow.Views
             _tenorService = new TenorService();
         }
 
+        public void ClearMemory()
+        {
+            GifList.ItemsSource = null;
+        }
+
         public void Initialize(string apiKey)
         {
             _apiKey = apiKey;

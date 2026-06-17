@@ -25,6 +25,7 @@ namespace ClipyFlow.Services
         public string TenorApiKey { get; set; } = "LIVDSRZULELA"; // Default Tenor V1/V2 general key
         public bool AutoPasteEnabled { get; set; } = true;
         public string Theme { get; set; } = "System";
+        public string GlobalHotkey { get; set; } = "Alt+V";
         
         // Customization
         public bool IsWindowPinned { get; set; } = false;

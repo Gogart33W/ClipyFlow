@@ -21,25 +21,35 @@ namespace ClipyFlow.Services
                 string path = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Assets", "emoji.json");
                 if (System.IO.File.Exists(path))
                 {
-                    string json = System.IO.File.ReadAllText(path);
+                    string json = System.IO.File.ReadAllText(path, System.Text.Encoding.UTF8);
                     using var doc = System.Text.Json.JsonDocument.Parse(json);
                     foreach (var element in doc.RootElement.EnumerateArray())
                     {
-                        if (element.TryGetProperty("emoji", out var emojiProp) && element.TryGetProperty("description", out var descProp) && element.TryGetProperty("category", out var catProp))
+                        try
                         {
-                            _allEmojis.Add(new EmojiItem
+                            if (element.TryGetProperty("emoji", out var emojiProp) && 
+                                element.TryGetProperty("description", out var descProp) && 
+                                element.TryGetProperty("category", out var catProp))
                             {
-                                Character = emojiProp.GetString() ?? "",
-                                Name = descProp.GetString() ?? "",
-                                Category = catProp.GetString() ?? ""
-                            });
+                                string? emojiStr = emojiProp.ValueKind == System.Text.Json.JsonValueKind.String ? emojiProp.GetString() : null;
+                                if (!string.IsNullOrEmpty(emojiStr))
+                                {
+                                    _allEmojis.Add(new EmojiItem
+                                    {
+                                        Character = emojiStr,
+                                        Name = descProp.ValueKind == System.Text.Json.JsonValueKind.String ? descProp.GetString() ?? "" : "",
+                                        Category = catProp.ValueKind == System.Text.Json.JsonValueKind.String ? catProp.GetString() ?? "" : ""
+                                    });
+                                }
+                            }
                         }
+                        catch { /* skip invalid emoji entry */ }
                     }
                 }
             }
-            catch
+            catch (System.Exception ex)
             {
-                // fallback if missing or parsing fails
+                System.Diagnostics.Debug.WriteLine($"Failed to load emoji.json: {ex}");
             }
             
             if (_allEmojis.Count == 0)

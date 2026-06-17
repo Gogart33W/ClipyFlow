@@ -97,25 +97,49 @@ namespace ClipyFlow.Views
             }
         }
 
-        private void BtnPickColor_Click(object sender, RoutedEventArgs e)
+        private void Swatch_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new System.Windows.Forms.ColorDialog
+            if (sender is System.Windows.Controls.Button btn && btn.Background is System.Windows.Media.SolidColorBrush brush)
             {
-                FullOpen = true
-            };
-
-            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                var hexColor = $"#{dlg.Color.R:X2}{dlg.Color.G:X2}{dlg.Color.B:X2}";
+                var color = brush.Color;
+                var hexColor = $"#{color.R:X2}{color.G:X2}{color.B:X2}";
                 _data.Settings.CustomBackgroundColor = hexColor;
-                TextBgColor.Text = hexColor;
             }
         }
 
         private void BtnClearColor_Click(object sender, RoutedEventArgs e)
         {
             _data.Settings.CustomBackgroundColor = string.Empty;
-            TextBgColor.Text = string.Empty;
+        }
+
+        private void TextHotkey_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            e.Handled = true;
+
+            var key = e.Key == System.Windows.Input.Key.System ? e.SystemKey : e.Key;
+
+            if (key == System.Windows.Input.Key.LeftCtrl || key == System.Windows.Input.Key.RightCtrl ||
+                key == System.Windows.Input.Key.LeftAlt || key == System.Windows.Input.Key.RightAlt ||
+                key == System.Windows.Input.Key.LeftShift || key == System.Windows.Input.Key.RightShift ||
+                key == System.Windows.Input.Key.LWin || key == System.Windows.Input.Key.RWin ||
+                key == System.Windows.Input.Key.DeadCharProcessed)
+            {
+                return;
+            }
+
+            var modifiers = System.Windows.Input.Keyboard.Modifiers;
+            if (modifiers == System.Windows.Input.ModifierKeys.None) return; // Must have at least one modifier
+
+            string hotkeyString = "";
+            if (modifiers.HasFlag(System.Windows.Input.ModifierKeys.Control)) hotkeyString += "Ctrl+";
+            if (modifiers.HasFlag(System.Windows.Input.ModifierKeys.Alt)) hotkeyString += "Alt+";
+            if (modifiers.HasFlag(System.Windows.Input.ModifierKeys.Shift)) hotkeyString += "Shift+";
+            if (modifiers.HasFlag(System.Windows.Input.ModifierKeys.Windows)) hotkeyString += "Win+";
+
+            hotkeyString += key.ToString();
+            
+            _data.Settings.GlobalHotkey = hotkeyString;
+            TextHotkey.Text = hotkeyString;
         }
     }
 }

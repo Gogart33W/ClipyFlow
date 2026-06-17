@@ -89,16 +89,38 @@
 
                 <!-- Views -->
                 <Grid Grid.Row="1">
-                    
-                    <!-- History List -->
-                    <ListView x:Name="ViewHistory" Visibility="Visible" ItemsSource="{Binding History}" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <!-- History View -->
+                    <Grid x:Name="ViewHistoryContainer" Visibility="Visible">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        
+                        <ComboBox x:Name="FilterHistoryCombo" Grid.Row="0" Margin="0,0,0,10" SelectedIndex="0" SelectionChanged="FilterHistoryCombo_SelectionChanged" HorizontalAlignment="Stretch">
+                            <ComboBoxItem Content="All Types" />
+                            <ComboBoxItem Content="Text" />
+                            <ComboBoxItem Content="Links" />
+                            <ComboBoxItem Content="Code" />
+                            <ComboBoxItem Content="Images" />
+                        </ComboBox>
+                        
+                        <!-- History List -->
+                        <ListView x:Name="ViewHistory" Grid.Row="1" ItemsSource="{Binding History}" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="Focusable" Value="False"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListViewItem">
-                                            <ContentPresenter />
+                                            <Border x:Name="Bd" BorderThickness="2" BorderBrush="Transparent" CornerRadius="8">
+                                                <ContentPresenter />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Setter.Value>
                                 </Setter>
@@ -226,6 +248,7 @@
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
+                    </Grid>
 
                     <!-- Snippets List -->
                     <Grid x:Name="ViewSnippetsContainer" Visibility="Collapsed">
@@ -311,7 +334,7 @@
                                     </ListView.ItemContainerStyle>
                                     <ListView.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding LanguageName}" FontWeight="SemiBold" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding LanguageName}" FontWeight="SemiBold" FontSize="12" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                                         </DataTemplate>
                                     </ListView.ItemTemplate>
                                 </ListView>
@@ -328,11 +351,18 @@
                                     <Setter Property="Focusable" Value="False" />
                                     <Setter Property="Template">
                                         <Setter.Value>
-                                            <ControlTemplate TargetType="ListViewItem">
+                                        <ControlTemplate TargetType="ListViewItem">
+                                            <Border x:Name="Bd" BorderThickness="2" BorderBrush="Transparent" CornerRadius="8">
                                                 <ContentPresenter />
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
                                 </Style>
                             </ListView.ItemContainerStyle>
                             <ListView.ItemTemplate>

@@ -8,6 +8,27 @@
         WindowBackdropType="Mica"
         Background="{DynamicResource ApplicationBackgroundBrush}">
 
+    <Window.Resources>
+        <Style x:Key="SwatchStyle" TargetType="Button">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="16" BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" BorderThickness="2" />
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -69,6 +90,21 @@
                     </Grid>
                 </ui:CardAction>
 
+                <!-- Hotkey -->
+                <ui:CardAction>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Global Hotkey" FontWeight="Medium" />
+                            <TextBlock Text="Press to open ClipyFlow" Foreground="Gray" FontSize="12" />
+                        </StackPanel>
+                        <ui:TextBox x:Name="TextHotkey" Grid.Column="1" Width="120" Text="{Binding Settings.GlobalHotkey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Alt+V" PreviewKeyDown="TextHotkey_PreviewKeyDown" IsReadOnly="True" Cursor="Hand" ToolTip="Click and press keys to record" />
+                    </Grid>
+                </ui:CardAction>
+
                 <TextBlock Text="Customization" FontSize="20" FontWeight="SemiBold" Margin="0,15,0,10" />
                 
                 <!-- Background Image -->
@@ -84,19 +120,22 @@
                     </Grid>
                 </StackPanel>
 
-                <!-- Background Color -->
+                <!-- Background Color Swatches -->
                 <StackPanel Margin="0,0,0,10">
-                    <TextBlock Text="Background Color (HEX)" FontWeight="Medium" Margin="0,0,0,5" />
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <ui:TextBox x:Name="TextBgColor" Grid.Column="0" Text="{Binding Settings.CustomBackgroundColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="e.g. #FF0000 or #2A2A2A" Margin="0,0,5,0" />
-                        <ui:Button Grid.Column="1" Content="Pick" Click="BtnPickColor_Click" Margin="0,0,5,0" />
-                        <ui:Button Grid.Column="2" Content="Clear" Click="BtnClearColor_Click" />
-                    </Grid>
+                    <TextBlock Text="Window Accent Color" FontWeight="Medium" Margin="0,0,0,5" />
+                    <WrapPanel Margin="0,0,0,5">
+                        <Button Style="{StaticResource SwatchStyle}" Background="#FF3B30" Click="Swatch_Click"/>
+                        <Button Style="{StaticResource SwatchStyle}" Background="#FF9500" Click="Swatch_Click"/>
+                        <Button Style="{StaticResource SwatchStyle}" Background="#FFCC00" Click="Swatch_Click"/>
+                        <Button Style="{StaticResource SwatchStyle}" Background="#34C759" Click="Swatch_Click"/>
+                        <Button Style="{StaticResource SwatchStyle}" Background="#00C7BE" Click="Swatch_Click"/>
+                        <Button Style="{StaticResource SwatchStyle}" Background="#007AFF" Click="Swatch_Click"/>
+                        <Button Style="{StaticResource SwatchStyle}" Background="#5856D6" Click="Swatch_Click"/>
+                        <Button Style="{StaticResource SwatchStyle}" Background="#AF52DE" Click="Swatch_Click"/>
+                        <Button Style="{StaticResource SwatchStyle}" Background="#FF2D55" Click="Swatch_Click"/>
+                        <Button Style="{StaticResource SwatchStyle}" Background="#8E8E93" Click="Swatch_Click"/>
+                    </WrapPanel>
+                    <ui:Button Content="Reset to Default" Click="BtnClearColor_Click" />
                 </StackPanel>
 
                 <!-- Opacity -->
