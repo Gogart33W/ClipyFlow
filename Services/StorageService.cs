@@ -19,19 +19,40 @@ namespace ClipyFlow.Services
         public SettingsData Settings { get; set; } = new();
     }
 
-    public class SettingsData
+    public class SettingsData : System.ComponentModel.INotifyPropertyChanged
     {
-        public bool StartWithWindows { get; set; } = false;
-        public string TenorApiKey { get; set; } = "LIVDSRZULELA"; // Default Tenor V1/V2 general key
-        public bool AutoPasteEnabled { get; set; } = true;
-        public string Theme { get; set; } = "System";
-        public string GlobalHotkey { get; set; } = "Alt+V";
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+        private void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+        }
+
+        private bool _startWithWindows = false;
+        public bool StartWithWindows { get => _startWithWindows; set { _startWithWindows = value; OnPropertyChanged(); } }
         
-        // Customization
-        public bool IsWindowPinned { get; set; } = false;
-        public string CustomBackgroundPath { get; set; } = string.Empty;
-        public string CustomBackgroundColor { get; set; } = string.Empty;
-        public double CustomBackgroundOpacity { get; set; } = 0.5;
+        private string _tenorApiKey = "LIVDSRZULELA";
+        public string TenorApiKey { get => _tenorApiKey; set { _tenorApiKey = value; OnPropertyChanged(); } }
+        
+        private bool _autoPasteEnabled = true;
+        public bool AutoPasteEnabled { get => _autoPasteEnabled; set { _autoPasteEnabled = value; OnPropertyChanged(); } }
+        
+        private string _theme = "System";
+        public string Theme { get => _theme; set { _theme = value; OnPropertyChanged(); } }
+        
+        private string _globalHotkey = "Alt+V";
+        public string GlobalHotkey { get => _globalHotkey; set { _globalHotkey = value; OnPropertyChanged(); } }
+        
+        private bool _isWindowPinned = false;
+        public bool IsWindowPinned { get => _isWindowPinned; set { _isWindowPinned = value; OnPropertyChanged(); } }
+        
+        private string _customBackgroundPath = string.Empty;
+        public string CustomBackgroundPath { get => _customBackgroundPath; set { _customBackgroundPath = value; OnPropertyChanged(); } }
+        
+        private string _customBackgroundColor = string.Empty;
+        public string CustomBackgroundColor { get => _customBackgroundColor; set { _customBackgroundColor = value; OnPropertyChanged(); } }
+        
+        private double _customBackgroundOpacity = 0.5;
+        public double CustomBackgroundOpacity { get => _customBackgroundOpacity; set { _customBackgroundOpacity = value; OnPropertyChanged(); } }
     }
 
     public class StorageService

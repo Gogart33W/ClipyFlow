@@ -156,6 +156,16 @@ namespace ClipyFlow
                 SaveData();
             };
             
+            _data.Settings.PropertyChanged += (s, e) => 
+            {
+                if (e.PropertyName == nameof(SettingsData.CustomBackgroundColor) ||
+                    e.PropertyName == nameof(SettingsData.CustomBackgroundPath) ||
+                    e.PropertyName == nameof(SettingsData.CustomBackgroundOpacity))
+                {
+                    UpdateCustomBackground();
+                }
+            };
+            
             UpdateCustomBackground();
         }
 
